@@ -1,0 +1,26 @@
+# macOS and editors
+.DS_Store
+**/.DS_Store
+.idea/
+.vscode/
+*.design
+
+# Logs and generated output
+*.log
+npm-debug.log*
+app/node_modules/
+app/dist/
+app/test-results/
+app/playwright-report/
+app/.data/
+
+# Local hosting state and secrets
+.vercel/
+app/.vercel/
+.env
+.env.*
+!.env.example
+app/.env
+app/.env.*
+!app/.env.example
+

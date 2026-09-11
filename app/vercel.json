@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build:web",
+  "outputDirectory": "dist/web",
+  "rewrites": [
+    { "source": "/", "destination": "/web.html" },
+    { "source": "/play", "destination": "/web.html?play=1" },
+    { "source": "/roadmap", "destination": "/web.html?page=roadmap" },
+    { "source": "/how", "destination": "/web.html?page=how" },
+    { "source": "/privacy", "destination": "/web.html?page=privacy" },
+    { "source": "/terms", "destination": "/web.html?page=terms" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}

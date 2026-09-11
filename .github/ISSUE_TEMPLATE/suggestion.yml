@@ -1,0 +1,50 @@
+name: Suggest an idea
+description: Propose a puzzle, theme, accessibility, social, or quality-of-life improvement.
+title: "[Idea] "
+labels:
+  - suggestion
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Wild ideas are welcome. A clear description of the player need helps us understand where they fit.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like *doku to do?
+      placeholder: It would be delightful if…
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What would this improve for you?
+      description: Tell us about the moment, frustration, or opportunity behind the idea.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of *doku does this touch?
+      options:
+        - Puzzles and gameplay
+        - Themes and visual design
+        - Accessibility
+        - Discord and friend challenges
+        - Accounts, sync, and history
+        - Website and documentation
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: References or rough examples
+      description: Links, screenshots, sketches, and half-formed thoughts are all useful.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Quick check
+      options:
+        - label: I searched for a similar suggestion before posting.
+          required: true

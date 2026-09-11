@@ -1,0 +1,36 @@
+name: App checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+      - name: Use Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: app/.nvmrc
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Protect the mobile runtime
+        run: npm run check:runtime
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test game and service logic
+        run: npm run test:game
+      - name: Build the public app
+        run: npm run build:web

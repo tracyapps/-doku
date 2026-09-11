@@ -1,0 +1,58 @@
+name: Report a bug
+description: Tell us what broke so we can reproduce and fix it.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make *doku sturdier. Please avoid including private Discord or account information.
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened?
+      description: Tell us what you saw and what you expected instead.
+      placeholder: I expected… but instead…
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we reproduce it?
+      description: Short, numbered steps are perfect.
+      placeholder: |
+        1. Open…
+        2. Tap…
+        3. See…
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where were you playing?
+      options:
+        - Website on a phone
+        - Website on a computer
+        - Discord Activity
+        - Local development build
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser, device, or Discord version
+      placeholder: Safari on iPhone 17, Chrome 142 on macOS, Discord desktop…
+  - type: textarea
+    id: visuals
+    attributes:
+      label: Screenshots or extra context
+      description: Drag screenshots here. Please crop out private channel or account details.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Quick check
+      options:
+        - label: I searched for an existing report of this problem.
+          required: true

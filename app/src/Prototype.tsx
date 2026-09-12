@@ -212,6 +212,18 @@ const ACTIVE = "doku.active.v1",
   HISTORY = "doku.history.v1",
   SETTINGS = "doku.settings.v1";
 const DISCORD_APP_ID = "1548073007950602303";
+const PUBLIC_PATHS: Partial<Record<Screen, string>> = {
+  home: "/",
+  setup: "/play/",
+  game: "/play/",
+  history: "/history/",
+  how: "/how/",
+  roadmap: "/roadmap/",
+  privacy: "/privacy/",
+  terms: "/terms/",
+};
+const normalizePublicPath = (path: string) =>
+  path === "/" ? path : `/${path.split("/").filter(Boolean).join("/")}/`;
 type RoadmapStatus = "planned" | "progress" | "shipped";
 type RoadmapCard = {
   id: string;
@@ -467,6 +479,15 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
   const [screen, setScreen] = useState<Screen>(() => {
     const params = new URLSearchParams(location.search),
       page = params.get("page");
+    const path = normalizePublicPath(location.pathname);
+    if (params.has("challenge")) return "setup";
+    if (path === "/privacy/") return "privacy";
+    if (path === "/terms/") return "terms";
+    if (path === "/how/") return "how";
+    if (path === "/roadmap/") return "roadmap";
+    if (path === "/history/") return "history";
+    if (path === "/play/")
+      return session && !session.completedAt ? "game" : "setup";
     return page === "privacy" ||
       page === "terms" ||
       page === "how" ||
@@ -871,7 +892,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
         setResult(linked);
         setSession((v) => (v?.id === s.id ? linked : v));
       }
-      const url = new URL("/web.html", location.origin);
+      const url = new URL("/play/", location.origin);
       url.searchParams.set("challenge", linked.challenge!.id);
       setShareUrl(url.toString());
       try {
@@ -973,17 +994,50 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     setShareUrl("");
     if (marketingSite) {
       const url = new URL(location.href);
-      if (
-        next === "privacy" ||
-        next === "terms" ||
-        next === "how" ||
-        next === "roadmap"
-      )
-        url.searchParams.set("page", next);
-      else url.searchParams.delete("page");
-      window.history.replaceState(null, "", url);
+      const path = PUBLIC_PATHS[next];
+      if (path) url.pathname = path;
+      url.searchParams.delete("page");
+      url.searchParams.delete("play");
+      if (!["setup", "game", "how", "friends"].includes(next))
+        url.searchParams.delete("challenge");
+      const unchanged =
+        url.pathname === location.pathname && url.search === location.search;
+      window.history[unchanged ? "replaceState" : "pushState"](null, "", url);
     }
   };
+  useEffect(() => {
+    if (!marketingSite) return;
+    const canonical = PUBLIC_PATHS[screen];
+    if (canonical) {
+      const url = new URL(location.href);
+      if (
+        url.pathname !== canonical ||
+        url.searchParams.has("page") ||
+        url.searchParams.has("play")
+      ) {
+        url.pathname = canonical;
+        url.searchParams.delete("page");
+        url.searchParams.delete("play");
+        window.history.replaceState(null, "", url);
+      }
+    }
+    const onPopState = () => {
+      const params = new URLSearchParams(location.search);
+      const path = normalizePublicPath(location.pathname);
+      setChallengeId(params.get("challenge"));
+      if (params.has("challenge")) setScreen("setup");
+      else if (path === "/privacy/") setScreen("privacy");
+      else if (path === "/terms/") setScreen("terms");
+      else if (path === "/how/") setScreen("how");
+      else if (path === "/roadmap/") setScreen("roadmap");
+      else if (path === "/history/") setScreen("history");
+      else if (path === "/play/")
+        setScreen(session && !session.completedAt ? "game" : "setup");
+      else setScreen("home");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [marketingSite, session?.id, session?.completedAt]);
   const showHomeSection = (id: string) => {
     go("home");
     requestAnimationFrame(() =>

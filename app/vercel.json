@@ -1,16 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
+  "trailingSlash": true,
   "installCommand": "npm ci",
   "buildCommand": "npm run build:web",
   "outputDirectory": "dist/web",
   "rewrites": [
     { "source": "/", "destination": "/web.html" },
-    { "source": "/play", "destination": "/web.html?play=1" },
-    { "source": "/roadmap", "destination": "/web.html?page=roadmap" },
-    { "source": "/how", "destination": "/web.html?page=how" },
-    { "source": "/privacy", "destination": "/web.html?page=privacy" },
-    { "source": "/terms", "destination": "/web.html?page=terms" }
+    { "source": "/play/", "destination": "/web.html" },
+    { "source": "/history/", "destination": "/web.html" },
+    { "source": "/roadmap/", "destination": "/web.html" },
+    { "source": "/how/", "destination": "/web.html" },
+    { "source": "/privacy/", "destination": "/web.html" },
+    { "source": "/terms/", "destination": "/web.html" }
   ],
   "headers": [
     {

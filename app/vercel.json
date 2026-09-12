@@ -1,10 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "trailingSlash": true,
   "installCommand": "npm ci",
   "buildCommand": "npm run build:web",
   "outputDirectory": "dist/web",
+  "redirects": [
+    { "source": "/play", "destination": "/play/", "permanent": true },
+    { "source": "/history", "destination": "/history/", "permanent": true },
+    { "source": "/roadmap", "destination": "/roadmap/", "permanent": true },
+    { "source": "/how", "destination": "/how/", "permanent": true },
+    { "source": "/privacy", "destination": "/privacy/", "permanent": true },
+    { "source": "/terms", "destination": "/terms/", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/web.html" },
     { "source": "/play/", "destination": "/web.html" },

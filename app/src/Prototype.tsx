@@ -80,6 +80,7 @@ import {
   initializeDiscord,
   getRoadmap,
   openExternalUrl,
+  shareDiscordChallenge,
   type RoadmapFeed,
   type RoadmapIssue,
 } from "./game/network";
@@ -563,6 +564,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     initializeDiscord()
       .then((s) => {
         if (s.status === "connected" && s.username) setPlayerName(s.username);
+        if (s.challengeId) setChallengeId(s.challengeId);
         if (s.status === "unavailable")
           setDiscord(
             "Discord connection is not configured. Solo play is available.",
@@ -895,6 +897,22 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       const url = new URL("/play/", location.origin);
       url.searchParams.set("challenge", linked.challenge!.id);
       setShareUrl(url.toString());
+      const shareOutcome = await shareDiscordChallenge(
+        linked.challenge!.id,
+        `I finished a ${linked.puzzle.variant} *doku puzzle on ${linked.puzzle.difficulty}. Want to try the same puzzle?`,
+      );
+      if (shareOutcome === "sent") {
+        notify("Challenge shared in Discord.");
+        return;
+      }
+      if (shareOutcome === "copied") {
+        notify("Discord copied the Activity link for you.");
+        return;
+      }
+      if (shareOutcome === "cancelled") {
+        notify("Sharing cancelled. Your challenge link is ready below.");
+        return;
+      }
       try {
         await navigator.clipboard.writeText(url.toString());
         notify(

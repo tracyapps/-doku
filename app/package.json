@@ -18,7 +18,7 @@
     "dev:web": "vite --config vite.web.config.ts",
     "dev:api": "tsx server/index.ts",
     "build:web": "tsc && vite build --config vite.web.config.ts",
-    "test:game": "node --import tsx --test tests/engine.test.ts tests/session.test.ts tests/selection.test.ts tests/service.test.ts",
+    "test:game": "node --import tsx --test tests/engine.test.ts tests/session.test.ts tests/selection.test.ts tests/network.test.ts tests/service.test.ts",
     "typecheck": "tsc --noEmit && tsc --ignoreConfig --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop --skipLibCheck --types node server/app.ts 'api/[...path].ts'"
   },
   "dependencies": {

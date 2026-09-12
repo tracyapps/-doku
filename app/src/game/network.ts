@@ -87,6 +87,21 @@ export type DiscordStatus = {
   status: "browser" | "unavailable" | "connected";
   message: string;
   username?: string;
+  challengeId?: string;
+};
+export type DiscordShareOutcome =
+  | "not-discord"
+  | "sent"
+  | "copied"
+  | "cancelled"
+  | "unavailable";
+const CHALLENGE_CUSTOM_ID = "challenge:";
+const CHALLENGE_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const discordChallengeId = (customId: string | null) => {
+  if (!customId?.startsWith(CHALLENGE_CUSTOM_ID)) return undefined;
+  const id = customId.slice(CHALLENGE_CUSTOM_ID.length);
+  return CHALLENGE_ID.test(id) ? id : undefined;
 };
 let discordSdkPromise: Promise<
   import("@discord/embedded-app-sdk").DiscordSDK
@@ -115,8 +130,10 @@ export async function initializeDiscord(): Promise<DiscordStatus> {
     return { status: "browser", message: "Playing on the web" };
   const clientId =
     import.meta.env.VITE_DISCORD_CLIENT_ID || "1548073007950602303";
+  let challengeId: string | undefined;
   try {
     const sdk = await getDiscordSdk();
+    challengeId = discordChallengeId(sdk.customId);
     const { code } = await sdk.commands.authorize({
       client_id: clientId,
       response_type: "code",
@@ -133,12 +150,32 @@ export async function initializeDiscord(): Promise<DiscordStatus> {
       status: "connected",
       message: "Connected to Discord",
       username: auth.user.username,
+      challengeId,
     };
   } catch {
     return {
       status: "unavailable",
       message: "Discord connection unavailable. Solo play is available.",
+      challengeId,
     };
+  }
+}
+export async function shareDiscordChallenge(
+  challengeId: string,
+  message: string,
+): Promise<DiscordShareOutcome> {
+  if (!isDiscordActivity()) return "not-discord";
+  try {
+    const sdk = await getDiscordSdk();
+    const result = await sdk.commands.shareLink({
+      message,
+      custom_id: `${CHALLENGE_CUSTOM_ID}${challengeId}`,
+    });
+    if (result.didSendMessage) return "sent";
+    if (result.didCopyLink) return "copied";
+    return result.success ? "sent" : "cancelled";
+  } catch {
+    return "unavailable";
   }
 }
 export async function openExternalUrl(url: string): Promise<void> {

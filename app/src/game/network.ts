@@ -103,6 +103,13 @@ export const discordChallengeId = (customId: string | null) => {
   const id = customId.slice(CHALLENGE_CUSTOM_ID.length);
   return CHALLENGE_ID.test(id) ? id : undefined;
 };
+const titleCase = (value: string) =>
+  value.length ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
+export const discordChallengeMessage = (
+  variant: Variant,
+  difficulty: Difficulty,
+) =>
+  `🧩 **${titleCase(variant)} · ${titleCase(difficulty)}** \\*doku complete!\nThink you can solve the same puzzle?`;
 let discordSdkPromise: Promise<
   import("@discord/embedded-app-sdk").DiscordSDK
 > | null = null;

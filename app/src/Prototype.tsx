@@ -81,6 +81,7 @@ import {
   getRoadmap,
   openExternalUrl,
   shareDiscordChallenge,
+  discordChallengeMessage,
   type RoadmapFeed,
   type RoadmapIssue,
 } from "./game/network";
@@ -899,7 +900,10 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       setShareUrl(url.toString());
       const shareOutcome = await shareDiscordChallenge(
         linked.challenge!.id,
-        `I finished a ${linked.puzzle.variant} *doku puzzle on ${linked.puzzle.difficulty}. Want to try the same puzzle?`,
+        discordChallengeMessage(
+          linked.puzzle.variant,
+          linked.puzzle.difficulty,
+        ),
       );
       if (shareOutcome === "sent") {
         notify("Challenge shared in Discord.");

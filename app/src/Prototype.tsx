@@ -102,7 +102,8 @@ type Screen =
   | "friends"
   | "roadmap"
   | "terms"
-  | "privacy";
+  | "privacy"
+  | "styleguide";
 type Theme =
   | "night"
   | "paper"
@@ -226,6 +227,7 @@ const PUBLIC_PATHS: Partial<Record<Screen, string>> = {
   roadmap: "/roadmap/",
   privacy: "/privacy/",
   terms: "/terms/",
+  styleguide: "/styleguide/",
 };
 const normalizePublicPath = (path: string) =>
   path === "/" ? path : `/${path.split("/").filter(Boolean).join("/")}/`;
@@ -458,6 +460,180 @@ function InputModeDemo() {
     </figure>
   );
 }
+/** Reference-page building blocks. Purely presentational: real classNames so
+ * every theme's CSS applies exactly as it does in play, but inert (no focus,
+ * no interaction) since these are swatches, not controls. */
+function SGItem({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="sg-item">
+      <div className="sg-swatch">{children}</div>
+      <span className="sg-label">{label}</span>
+    </div>
+  );
+}
+function SGCell({
+  value,
+  given,
+  matching,
+  selected,
+  error,
+  celebrating,
+  valueCelebrating,
+  hue,
+  notes,
+  noteMatchValue,
+}: {
+  value?: number;
+  given?: boolean;
+  matching?: boolean;
+  selected?: boolean;
+  error?: boolean;
+  celebrating?: boolean;
+  valueCelebrating?: boolean;
+  hue?: boolean;
+  notes?: number[];
+  noteMatchValue?: number;
+}) {
+  const cls = [
+    "cell",
+    given ? "given" : "entry",
+    matching ? "matching" : "",
+    selected ? "selected" : "",
+    error ? "error" : "",
+    celebrating ? "celebrating" : "",
+    valueCelebrating ? "value-celebrating" : "",
+    value && hue ? "hue-filled" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <button
+      className={cls}
+      tabIndex={-1}
+      aria-hidden="true"
+      style={
+        {
+          width: 58,
+          height: 58,
+          border: "1px solid var(--grid-line)",
+          borderRadius: 4,
+          pointerEvents: "none",
+          "--hue-color": value ? colors[value - 1] : undefined,
+        } as CSSProperties
+      }
+    >
+      {value ? (
+        hue ? (
+          <Symbol value={value} pattern />
+        ) : (
+          <span className="cell-value">{value}</span>
+        )
+      ) : notes ? (
+        <span className="notes-grid">
+          {Array.from({ length: 9 }, (_, n) => {
+            const has = notes.includes(n + 1);
+            const isMatch = has && noteMatchValue === n + 1;
+            return (
+              <span key={n} className={isMatch ? "note-match" : ""}>
+                {has ? hue ? <Symbol value={n + 1} small /> : n + 1 : ""}
+              </span>
+            );
+          })}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+function SGKey({
+  value,
+  hue,
+  active,
+  complete,
+  celebrating,
+}: {
+  value: number;
+  hue?: boolean;
+  active?: boolean;
+  complete?: boolean;
+  celebrating?: boolean;
+}) {
+  return (
+    <div
+      className="keypad"
+      style={{ gridTemplateColumns: "1fr", width: 58, pointerEvents: "none" }}
+    >
+      <button
+        tabIndex={-1}
+        aria-hidden="true"
+        className={[
+          active ? "active" : "",
+          complete ? "complete" : "",
+          celebrating ? "value-celebrating" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        style={{ height: 58 }}
+      >
+        {hue ? (
+          <Symbol value={value} />
+        ) : (
+          <span className="key-value">{value}</span>
+        )}
+        {complete && (
+          <span className="key-complete">
+            <Check size={11} weight="bold" />
+          </span>
+        )}
+      </button>
+    </div>
+  );
+}
+// A curated irregular partition kept only for this reference page, mirroring
+// the one createPuzzle() uses for the jigsaw variant.
+const SG_JIGSAW = [
+  0, 0, 0, 1, 1, 1, 2, 2, 2, 0, 0, 0, 0, 1, 4, 2, 2, 2, 0, 0, 1, 1, 1, 4, 2, 2,
+  2, 3, 3, 1, 1, 4, 4, 5, 5, 5, 3, 3, 3, 3, 4, 4, 5, 8, 5, 3, 3, 3, 4, 4, 4, 5,
+  8, 5, 6, 6, 6, 7, 7, 7, 5, 8, 5, 6, 6, 7, 7, 7, 7, 8, 8, 8, 6, 6, 6, 6, 7, 7,
+  8, 8, 8,
+];
+function SGJigsawBoard() {
+  return (
+    <div
+      className="board"
+      data-variant="jigsaw"
+      style={{ width: 198, pointerEvents: "none" }}
+    >
+      {SG_JIGSAW.map((region, i) => {
+        const r = Math.floor(i / 9),
+          c = i % 9;
+        const selected = i === 40,
+          matching = i === 13;
+        const borders = {
+          borderRightWidth: c === 8 ? 0 : region !== SG_JIGSAW[i + 1] ? 2 : 1,
+          borderBottomWidth: r === 8 ? 0 : region !== SG_JIGSAW[i + 9] ? 2 : 1,
+          borderRightColor:
+            c < 8 && region !== SG_JIGSAW[i + 1]
+              ? "var(--region-line)"
+              : "var(--grid-line)",
+          borderBottomColor:
+            r < 8 && region !== SG_JIGSAW[i + 9]
+              ? "var(--region-line)"
+              : "var(--grid-line)",
+        };
+        return (
+          <button
+            key={i}
+            data-region={region}
+            tabIndex={-1}
+            aria-hidden="true"
+            className={`cell entry ${selected ? "selected" : ""} ${matching ? "matching" : ""}`}
+            style={{ ...borders, borderStyle: "solid" } as CSSProperties}
+          />
+        );
+      })}
+    </div>
+  );
+}
 export default function Prototype() {
   return (
     <MobileScroll className="doku-preview">
@@ -490,6 +666,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     if (path === "/terms/") return "terms";
     if (path === "/how/") return "how";
     if (path === "/roadmap/") return "roadmap";
+    if (path === "/styleguide/") return "styleguide";
     if (path === "/history/") return "history";
     if (path === "/play/")
       return session && !session.completedAt ? "game" : "setup";
@@ -505,6 +682,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           : "home";
   });
   const [howReturn, setHowReturn] = useState<Screen>("home");
+  const [sgTheme, setSgTheme] = useState<Theme>(settings.theme);
   const [sheet, setSheet] = useState<"settings" | "more" | null>(null),
     [confirm, setConfirm] = useState<"restart" | "new" | "reveal" | null>(null);
   const [variant, setVariant] = useState<Variant>("classic"),
@@ -1083,6 +1261,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       else if (path === "/terms/") setScreen("terms");
       else if (path === "/how/") setScreen("how");
       else if (path === "/roadmap/") setScreen("roadmap");
+      else if (path === "/styleguide/") setScreen("styleguide");
       else if (path === "/history/") setScreen("history");
       else if (path === "/play/")
         setScreen(session && !session.completedAt ? "game" : "setup");
@@ -1223,7 +1402,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
   return (
     <div
       className={`doku ${preview ? "in-preview" : ""}`}
-      data-theme={settings.theme}
+      data-theme={screen === "styleguide" ? undefined : settings.theme}
       data-font={settings.font}
       style={themeStyle}
       onPointerDown={(e) => {
@@ -1571,6 +1750,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                 <button onClick={() => go("roadmap")}>
                   Roadmap & feedback
                 </button>
+                <button onClick={() => go("styleguide")}>Style guide</button>
                 <button onClick={() => go("privacy")}>Privacy</button>
                 <button onClick={() => go("terms")}>Terms</button>
               </>
@@ -2452,6 +2632,144 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             Questions can be sent through the support contact on the official
             Discord application listing.
           </p>
+        </main>
+      )}
+      {screen === "styleguide" && (
+        <main className="page styleguide-page">
+          <Back />
+          <p className="eyebrow">FOR DEV REFERENCE</p>
+          <h1 className="page-title">Every state, at a glance.</h1>
+          <p className="muted">
+            One rendering of every meaningful board, note, and keypad state
+            across each theme — for spotting regressions and designing new
+            themes. Not part of the game itself.
+          </p>
+          <label className="sg-theme-picker">
+            Preview theme
+            <span>
+              <select
+                aria-label="Preview theme"
+                value={sgTheme}
+                onChange={(e) => setSgTheme(e.target.value as Theme)}
+              >
+                {themeOptions.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              <CaretDown size={18} />
+            </span>
+          </label>
+          <div className="doku sg-preview" data-theme={sgTheme}>
+            <section className="sg-section">
+              <h2>Cells — classic</h2>
+              <div className="sg-grid">
+                <SGItem label="given · .cell.given">
+                  <SGCell value={6} given />
+                </SGItem>
+                <SGItem label="entry · .cell.entry">
+                  <SGCell value={3} />
+                </SGItem>
+                <SGItem label="selected · .selected">
+                  <SGCell value={7} selected />
+                </SGItem>
+                <SGItem label="matching · .matching">
+                  <SGCell value={7} matching />
+                </SGItem>
+                <SGItem label="selected + matching">
+                  <SGCell value={7} selected matching />
+                </SGItem>
+                <SGItem label="error · .error">
+                  <SGCell value={4} error />
+                </SGItem>
+                <SGItem label="unit complete · .celebrating">
+                  <SGCell value={5} celebrating />
+                </SGItem>
+                <SGItem label="value complete · .value-celebrating">
+                  <SGCell value={9} valueCelebrating />
+                </SGItem>
+              </div>
+            </section>
+            <section className="sg-section">
+              <h2>Cells — huedoku</h2>
+              <div className="sg-grid">
+                <SGItem label="filled · .hue-filled (value 1)">
+                  <SGCell value={1} hue />
+                </SGItem>
+                <SGItem label="filled · .hue-filled (value 9)">
+                  <SGCell value={9} hue />
+                </SGItem>
+                <SGItem label="selected · .hue-filled.selected">
+                  <SGCell value={4} hue selected />
+                </SGItem>
+                <SGItem label="matching · .hue-filled.matching">
+                  <SGCell value={4} hue matching />
+                </SGItem>
+              </div>
+            </section>
+            <section className="sg-section">
+              <h2>Notes</h2>
+              <div className="sg-grid">
+                <SGItem label="notes · .notes-grid">
+                  <SGCell notes={[2, 4, 6]} />
+                </SGItem>
+                <SGItem label="notes + match · .note-match">
+                  <SGCell notes={[2, 4, 6]} noteMatchValue={6} />
+                </SGItem>
+                <SGItem label="hue notes · .notes-grid">
+                  <SGCell notes={[1, 6, 9]} hue />
+                </SGItem>
+                <SGItem label="hue notes + match · .note-match">
+                  <SGCell notes={[1, 6, 9]} noteMatchValue={9} hue />
+                </SGItem>
+              </div>
+            </section>
+            <section className="sg-section">
+              <h2>Keypad</h2>
+              <div className="sg-grid">
+                <SGItem label="default">
+                  <SGKey value={5} />
+                </SGItem>
+                <SGItem label="active · .active">
+                  <SGKey value={5} active />
+                </SGItem>
+                <SGItem label="complete · .complete .key-complete">
+                  <SGKey value={5} complete />
+                </SGItem>
+                <SGItem label="value complete · .value-celebrating">
+                  <SGKey value={9} celebrating />
+                </SGItem>
+                <SGItem label="hue · default">
+                  <SGKey value={7} hue />
+                </SGItem>
+                <SGItem label="hue · active">
+                  <SGKey value={7} hue active />
+                </SGItem>
+                <SGItem label="hue · complete">
+                  <SGKey value={7} hue complete />
+                </SGItem>
+              </div>
+            </section>
+            <section className="sg-section">
+              <h2>Jigsaw regions</h2>
+              <div className="sg-grid">
+                <SGItem label="board[data-variant=jigsaw] · selected + matching shown">
+                  <SGJigsawBoard />
+                </SGItem>
+              </div>
+              <div className="sg-grid sg-grid-chips">
+                {Array.from({ length: 9 }, (_, i) => (
+                  <SGItem key={i} label={`region ${i} · var(--jigsaw-${i})`}>
+                    <div
+                      className="sg-chip"
+                      style={{ background: `var(--jigsaw-${i})` }}
+                    />
+                  </SGItem>
+                ))}
+              </div>
+            </section>
+          </div>
         </main>
       )}
       <Modal

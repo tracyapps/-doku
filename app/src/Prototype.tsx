@@ -1408,7 +1408,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       onPointerDown={(e) => {
         const target = e.target as HTMLElement;
         if (target.closest(".board,.keypad")) return;
-        setActive(null);
+        if (!target.closest("[data-preserve-active-value]")) setActive(null);
         if (!target.closest(".editing-controls")) {
           setSelected(null);
           setEraseActive(false);
@@ -2026,6 +2026,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             <div className="game-controls">
               <div className="editing-controls">
                 <button
+                  data-preserve-active-value
                   className="labeled-icon"
                   disabled={!session.past.length || !!session.completedAt}
                   onClick={() => {
@@ -2038,7 +2039,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                   </span>
                   <small>Undo</small>
                 </button>
-                <div className="pen-toggle">
+                <div className="pen-toggle" data-preserve-active-value>
                   <button
                     aria-pressed={!notes}
                     className={!notes ? "chosen" : ""}

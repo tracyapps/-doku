@@ -196,19 +196,22 @@ const colorNames = [
   "teal cross",
   "blue star",
   "indigo crescent",
-  "purple heart",
-  "rose hexagon",
+  "magenta heart",
+  "pink hexagon",
 ];
+// Bolder, more saturated hues than a first pass at this palette: closer to
+// comic/ink colors than pastel candy, with #9 pushed to a distinct hot pink
+// so it no longer reads as a washed-out twin of #1 (red) or #8 (magenta).
 const colors = [
-  "#fa726c",
-  "#f6a355",
-  "#e8c95b",
-  "#7acd87",
-  "#62ccc5",
-  "#79b4ff",
-  "#ad9dfb",
-  "#d896ed",
-  "#f394bb",
+  "#e82c3b",
+  "#e16a0e",
+  "#d49a11",
+  "#26974b",
+  "#1d9a8e",
+  "#3083e8",
+  "#6e52e0",
+  "#b543db",
+  "#ed2c83",
 ];
 const ACTIVE = "doku.active.v1",
   HISTORY = "doku.history.v1",
@@ -515,6 +518,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
   const [toast, setToast] = useState(""),
     [checked, setChecked] = useState<number[]>([]),
     [celebrate, setCelebrate] = useState<number[]>([]),
+    [celebrateValue, setCelebrateValue] = useState<number | null>(null),
     [busy, setBusy] = useState(false),
     [result, setResult] = useState<Session | null>(null);
   const [challengeId, setChallengeId] = useState<string | null>(() =>
@@ -531,6 +535,20 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     [roadmapProblem, setRoadmapProblem] = useState(false);
 
   const celebrationSeen = useRef(new Set<string>());
+  const valueCelebrationSeen = useRef(new Set<number>());
+  /** A value is "done" once all nine copies are placed with no conflicts among them. */
+  const completedValues = (values: number[], regions: number[]) => {
+    const bad = new Set(conflicts(values, regions));
+    const counts = Array(10).fill(0) as number[];
+    values.forEach((v) => {
+      if (v) counts[v]++;
+    });
+    return Array.from({ length: 9 }, (_, i) => i + 1).filter(
+      (v) =>
+        counts[v] === 9 &&
+        values.every((val, i) => val !== v || !bad.has(i)),
+    );
+  };
   const notify = (message: string) => setToast(message);
   const selectedGiven = selected !== null && !!session?.puzzle.givens[selected];
   const clearSelection = () => {
@@ -561,6 +579,11 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     const timer = setTimeout(() => setCelebrate([]), 900);
     return () => clearTimeout(timer);
   }, [celebrate]);
+  useEffect(() => {
+    if (celebrateValue === null) return;
+    const timer = setTimeout(() => setCelebrateValue(null), 1100);
+    return () => clearTimeout(timer);
+  }, [celebrateValue]);
   useEffect(() => {
     initializeDiscord()
       .then((s) => {
@@ -709,6 +732,9 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           u.join(","),
         ),
       );
+      valueCelebrationSeen.current = new Set(
+        completedValues(next.values, next.puzzle.regions),
+      );
     } catch (e) {
       notify(e instanceof Error ? e.message : "Could not start the puzzle.");
     } finally {
@@ -733,6 +759,11 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       );
       for (const u of fresh) celebrationSeen.current.add(u.join(","));
       if (fresh.length) setCelebrate([...new Set(fresh.flat())]);
+      const newlyDone = completedValues(next.values, next.puzzle.regions).filter(
+        (v) => !valueCelebrationSeen.current.has(v),
+      );
+      for (const v of newlyDone) valueCelebrationSeen.current.add(v);
+      if (newlyDone.length) setCelebrateValue(newlyDone[0]);
     }
   };
   const cellClick = (i: number) => {
@@ -1744,7 +1775,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                       key={i}
                       data-cell={i}
                       data-region={reg}
-                      className={`cell ${given ? "given" : "entry"} ${matching ? "matching" : ""} ${selected === i ? "selected" : ""} ${error ? "error" : ""} ${celebrate.includes(i) ? "celebrating" : ""} region-${reg % 2} ${value && session.puzzle.variant === "hue" ? "hue-filled" : ""}`}
+                      className={`cell ${given ? "given" : "entry"} ${matching ? "matching" : ""} ${selected === i ? "selected" : ""} ${error ? "error" : ""} ${celebrate.includes(i) ? "celebrating" : ""} ${value && celebrateValue === value ? "value-celebrating" : ""} region-${reg % 2} ${value && session.puzzle.variant === "hue" ? "hue-filled" : ""}`}
                       style={
                         {
                           ...borders,
@@ -1887,7 +1918,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                       }
                       aria-label={`Select ${session.puzzle.variant === "hue" ? colorNames[i] : v}${done ? ", complete" : ""}`}
                       aria-pressed={active === v}
-                      className={`${active === v ? "active" : ""} ${done ? "complete" : ""}`}
+                      className={`${active === v ? "active" : ""} ${done ? "complete" : ""} ${celebrateValue === v ? "value-celebrating" : ""}`}
                       onClick={() => keyClick(v)}
                     >
                       {session.puzzle.variant === "hue" ? (
@@ -1895,7 +1926,11 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                       ) : (
                         <span className="key-value">{v}</span>
                       )}
-                      {done && <Check className="key-complete" size={13} />}
+                      {done && (
+                        <span className="key-complete">
+                          <Check size={11} weight="bold" />
+                        </span>
+                      )}
                     </button>
                   );
                 })}

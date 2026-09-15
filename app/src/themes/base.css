@@ -189,7 +189,7 @@ select {
   letter-spacing: 0.16em;
   color: var(--accent);
   line-height: 1.7;
-  margin-bottom: 18px;
+  margin-bottom: 1px;
 }
 .home-content {
   max-width: 1140px;
@@ -355,10 +355,10 @@ footer > span:last-child {
 }
 .page-title {
   font:
-    800 38px/1.1 Outfit,
+    800 31px/1 Outfit,
     sans-serif;
   letter-spacing: -0.04em;
-  margin-bottom: 16px;
+  margin-bottom: 6px;
 }
 .back-link {
   background: none;
@@ -367,13 +367,13 @@ footer > span:last-child {
   gap: 4px;
   align-items: center;
   color: var(--muted);
-  margin-bottom: 30px;
-  font-size: 14px;
+  margin: -3em 0 0.5em 0;
+  font-size: 13px;
 }
 .type-options {
   display: grid;
   gap: 12px;
-  margin: 28px 0;
+  margin: 10px 0 20px 0;
 }
 .type-option {
   display: flex;

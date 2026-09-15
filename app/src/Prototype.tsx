@@ -1832,10 +1832,6 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               </button>
             ))}
           </div>
-          <p className="fine-print">
-            Levels currently vary clue density; logical difficulty ratings are
-            still being calibrated. Every puzzle has one solution.
-          </p>
           <button
             className="primary wide"
             disabled={busy || (!!challengeId && !challengeData)}

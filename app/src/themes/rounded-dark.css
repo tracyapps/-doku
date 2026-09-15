@@ -8,8 +8,8 @@
 .doku[data-theme="rounded-dark"],
 [data-doku-theme="rounded-dark"] {
   --bg: #102534;
-  --surface: #323232;
-  --surface-soft: #2c3238;
+  --surface: #070708;
+  --surface-soft: #06111f;
   --text: #f6f9ff;
   --muted: #9ea6b2;
   --accent: #fc34d4;
@@ -18,7 +18,7 @@
   --grid-line: #a7c8eb;
   --region-line: #4d7db4;
   --error: #ff436c;
-  --dialog-bg: #2e2e2e;
+  --dialog-bg: #102534;
   color-scheme: dark;
 }
 .theme-rounded-dark {
@@ -46,11 +46,11 @@
   padding: 5px;
   border: 0;
   border-radius: 26px;
-  background: #292a2b;
+  background: #102534;
   box-shadow:
-    inset 0 3px 0 #fff,
-    0 10px 0 #5f8fbe,
-    0 18px 28px #6c9aca66;
+    inset 0 3px 0 #264d69,
+    0 10px 0 #08131b,
+    0 18px 28px #186296;
   overflow: visible;
 }
 .doku[data-theme="rounded-dark"] .cell {
@@ -59,11 +59,11 @@
   background: #0c1c28;
   color: #fff;
   box-shadow:
-    inset 0 2px 0 #0c0b0b,
-    0 2px 4px #5e86ad40;
+    inset 0 2px 0 #030202,
+    0 2px 4px #6f96bd40;
 }
 .doku[data-theme="rounded-dark"] .cell.region-1 {
-  background: #293645;
+  background: #10121f;
 }
 .doku[data-theme="rounded-dark"] .cell.matching {
   background: #4927f3;
@@ -211,12 +211,12 @@
     0 4px 7px #4d78a544;
 }
 .doku[data-theme="rounded-dark"] .timer {
-  border: 1px solid #fff;
-  background: #fff;
+  border: 1px solid #d356ef;
+  background: #3d3c3c;
   border-radius: 999px;
   box-shadow:
-    inset 0 3px 0 #fff,
-    inset 0 -4px 0 #b2ceed,
+    inset 0 3px 0 #3c3c3c,
+    inset 0 -4px 0 #0b0b0b,
     0 6px 10px #4d78a53d;
 }
 .doku[data-theme="rounded-dark"] .type-option {
@@ -299,8 +299,8 @@ html[data-doku-theme="rounded-dark"] .bottom-sheet {
   --peek-ink: #17345f;
   --peek-lit: #73b0ff;
   --peek-lit-ink: #fff;
-  background: #e9f4ff;
-  color: #17345f;
+  background: #102534;
+  color: #f4f4f4;
   border: 4px solid #94bbe2;
   border-radius: 28px;
   box-shadow:

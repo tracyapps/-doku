@@ -1,0 +1,323 @@
+/* Web 2.0 (id: rounded) - maximum-radius, beveled, glossy skin. */
+
+.doku[data-theme="rounded"] .cell.hue-filled:not(.selected):not(.matching) {
+  box-shadow:
+    inset 0 2px 0 #ffffff80,
+    inset 0 -3px 0 #00000026;
+}
+.doku[data-theme="rounded"],
+[data-doku-theme="rounded"] {
+  --bg: #e9f4ff;
+  --surface: #fff;
+  --surface-soft: #d7eaff;
+  --text: #17345f;
+  --muted: #55729b;
+  --accent: #2d79ef;
+  --accent-ink: #fff;
+  --accent-soft: #b9dcff;
+  --grid-line: #a7c8eb;
+  --region-line: #4d7db4;
+  --error: #c12546;
+  --dialog-bg: #f3f9ff;
+  color-scheme: light;
+}
+.theme-rounded {
+  background: #e9f4ff;
+  color: #2d79ef;
+  border-color: #fff;
+  border-radius: 999px;
+  box-shadow:
+    inset 0 3px 0 #fff,
+    0 4px 0 #8bb8e6;
+}
+.doku[data-theme="rounded"] {
+  font-family: "DM Sans", sans-serif;
+  background: var(--bg);
+}
+.doku[data-theme="rounded"] .brand,
+.doku[data-theme="rounded"] h1,
+.doku[data-theme="rounded"] h2,
+.doku[data-theme="rounded"] h3 {
+  color: #17345f;
+  text-shadow: 0 2px 0 #fff;
+}
+.doku[data-theme="rounded"] .board {
+  gap: 2px;
+  padding: 5px;
+  border: 0;
+  border-radius: 26px;
+  background: #94bbe2;
+  box-shadow:
+    inset 0 3px 0 #fff,
+    0 10px 0 #5f8fbe,
+    0 18px 28px #6c9aca66;
+  overflow: visible;
+}
+.doku[data-theme="rounded"] .cell {
+  border-width: 0 !important;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 2px 4px #5e86ad40;
+}
+.doku[data-theme="rounded"] .cell.region-1 {
+  background: #d7eaff;
+}
+.doku[data-theme="rounded"] .cell.matching {
+  background: #73b0ff;
+  color: #fff;
+  text-shadow: 0 1px 1px #174d9b;
+  box-shadow:
+    inset 0 3px 0 #beddff,
+    inset 0 -4px 0 #2860b0,
+    0 6px 10px #4e78a45c;
+}
+.doku[data-theme="rounded"] .notes-grid .note-match {
+  background: #73b0ff;
+  color: #fff;
+  border-radius: 3px;
+  box-shadow:
+    inset 0 1px 0 #beddff,
+    inset 0 -1px 0 #2860b0;
+}
+.doku[data-theme="rounded"] .cell.selected {
+  background: #2d79ef;
+  color: #fff;
+  box-shadow:
+    inset 0 3px 0 #8ec0ff,
+    inset 0 -4px 0 #174eac,
+    0 7px 12px #325e8f80;
+}
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(9n + 3),
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(9n + 6) {
+  margin-right: 4px;
+}
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(n + 19):nth-child(-n + 27),
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(n + 46):nth-child(-n + 54) {
+  margin-bottom: 4px;
+}
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 1),
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 4),
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 7) {
+  border-top-left-radius: 18px;
+}
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 3),
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 6),
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 9) {
+  border-top-right-radius: 18px;
+}
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 19),
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 22),
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 25) {
+  border-bottom-left-radius: 18px;
+}
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 21),
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 24),
+.doku[data-theme="rounded"]
+  .board:not([data-variant="jigsaw"])
+  .cell:nth-child(27n + 27) {
+  border-bottom-right-radius: 18px;
+}
+.doku[data-theme="rounded"] .icon-button,
+.doku[data-theme="rounded"] .labeled-icon > span,
+.doku[data-theme="rounded"] .keypad > button,
+.doku[data-theme="rounded"] .primary,
+.doku[data-theme="rounded"] .secondary,
+.doku[data-theme="rounded"] .type-option,
+.doku[data-theme="rounded"] .level-options button,
+.doku[data-theme="rounded"] .input-order select,
+.doku[data-theme="rounded"] .history-icon,
+.doku[data-theme="rounded"] .share-link,
+.doku[data-theme="rounded"] .notice {
+  border: 1px solid #fff;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow:
+    inset 0 3px 0 #fff,
+    inset 0 -4px 0 #b2ceed,
+    0 7px 12px #4d78a53d;
+}
+.doku[data-theme="rounded"] .icon-button,
+.doku[data-theme="rounded"] .labeled-icon > span {
+  border-radius: 50%;
+}
+.doku[data-theme="rounded"] .keypad > button {
+  border-radius: 20px;
+  color: #17345f;
+  font-weight: 700;
+}
+.doku[data-theme="rounded"] .keypad > button.active {
+  background: #2d79ef;
+  color: #fff;
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 3px 0 #8ec0ff,
+    inset 0 -2px 0 #174eac,
+    0 3px 7px #4d78a54d;
+}
+.doku[data-theme="rounded"] .pen-toggle {
+  height: 49px;
+  padding: 5px;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  background: #c9e3ff;
+  box-shadow:
+    inset 0 3px 5px #6d9ecb66,
+    0 5px 10px #4d78a533;
+}
+.doku[data-theme="rounded"] .pen-toggle button {
+  border-radius: 999px;
+}
+.doku[data-theme="rounded"] .pen-toggle button.chosen {
+  box-shadow:
+    inset 0 3px 0 #8ec0ff,
+    inset 0 -3px 0 #174eac,
+    0 4px 7px #4d78a544;
+}
+.doku[data-theme="rounded"] .timer {
+  border: 1px solid #fff;
+  background: #fff;
+  border-radius: 999px;
+  box-shadow:
+    inset 0 3px 0 #fff,
+    inset 0 -4px 0 #b2ceed,
+    0 6px 10px #4d78a53d;
+}
+.doku[data-theme="rounded"] .type-option {
+  border-radius: 28px;
+}
+.doku[data-theme="rounded"] .level-options button {
+  border-radius: 999px;
+}
+.doku[data-theme="rounded"] .dialog-content,
+[data-doku-theme="rounded"] .dialog-content {
+  border-radius: 32px;
+  box-shadow:
+    inset 0 3px 0 #fff,
+    0 24px 60px #4d78a566;
+}
+.doku[data-theme="rounded"] .primary {
+  background: #2d79ef;
+  color: #fff;
+}
+html[data-doku-theme="rounded"] .bottom-sheet {
+  border: 2px solid #fff;
+  border-bottom: 0;
+  border-radius: 34px 34px 0 0;
+  background: #f3f9ff;
+  box-shadow:
+    inset 0 3px 0 #fff,
+    0 -18px 45px #4d78a566;
+}
+@media (max-width: 700px) {
+  .doku[data-theme="rounded"] .board {
+    padding: 4px;
+    gap: 1px;
+  }
+  .doku[data-theme="rounded"]
+    .board:not([data-variant="jigsaw"])
+    .cell:nth-child(9n + 3),
+  .doku[data-theme="rounded"]
+    .board:not([data-variant="jigsaw"])
+    .cell:nth-child(9n + 6) {
+    margin-right: 3px;
+  }
+  .doku[data-theme="rounded"]
+    .board:not([data-variant="jigsaw"])
+    .cell:nth-child(n + 19):nth-child(-n + 27),
+  .doku[data-theme="rounded"]
+    .board:not([data-variant="jigsaw"])
+    .cell:nth-child(n + 46):nth-child(-n + 54) {
+    margin-bottom: 3px;
+  }
+  .doku[data-theme="rounded"] .cell {
+    border-radius: 6px;
+  }
+  .doku[data-theme="rounded"] .keypad > button {
+    border-radius: 18px;
+  }
+}
+.doku[data-theme="rounded"] {
+  --jigsaw-0: #d7e5f4;
+  --jigsaw-1: #ded1f0;
+  --jigsaw-2: #cbebe5;
+  --jigsaw-3: #f2ebd4;
+  --jigsaw-4: #f0d1d9;
+  --jigsaw-5: #e6f0db;
+  --jigsaw-6: #eeddce;
+  --jigsaw-7: #dfeef1;
+  --jigsaw-8: #eed3e5;
+}
+.doku[data-theme="rounded"] .board[data-variant="jigsaw"] .cell.matching {
+  background: #73b0ff;
+}
+.doku[data-theme="rounded"] .board[data-variant="jigsaw"] .cell.selected {
+  background: #2d79ef;
+}
+.doku[data-theme="rounded"] {
+  --theme-value-weight: 700;
+  --selected-note-color: #fff;
+}
+.theme-peek-rounded {
+  --peek-cell: #fff;
+  --peek-ink: #17345f;
+  --peek-lit: #73b0ff;
+  --peek-lit-ink: #fff;
+  background: #e9f4ff;
+  color: #17345f;
+  border: 4px solid #94bbe2;
+  border-radius: 28px;
+  box-shadow:
+    inset 0 3px 0 #fff,
+    0 9px 0 #5f8fbe,
+    0 20px 35px #6c9aca55;
+}
+.theme-peek-rounded b {
+  border-radius: 7px;
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 2px 4px #5e86ad40;
+}
+.doku[data-theme="rounded"] .roadmap-lane {
+  border-radius: 28px;
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 6px 12px #4d78a522;
+}
+.doku[data-theme="rounded"] .roadmap-card {
+  border-radius: 20px;
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 4px 8px #4d78a522;
+}

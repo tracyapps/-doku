@@ -1,0 +1,38 @@
+/* Contrast — maximum-contrast accessibility theme. */
+
+.doku[data-theme="contrast"],
+[data-doku-theme="contrast"] {
+  --bg: #050505;
+  --surface: #1b1b1b;
+  --surface-soft: #111;
+  --text: #fff;
+  --muted: #dedede;
+  --accent: #ffe96b;
+  --accent-ink: #090909;
+  --accent-soft: #403b19;
+  --grid-line: #777;
+  --region-line: #fff;
+  --error: #ffa4ae;
+  --dialog-bg: #101010;
+}
+.theme-contrast {
+  background: #000;
+  color: #ffe96b;
+}
+.doku[data-theme="contrast"] {
+  --jigsaw-0: #1a1605;
+  --jigsaw-1: #092025;
+  --jigsaw-2: #1e1405;
+  --jigsaw-3: #180920;
+  --jigsaw-4: #081c12;
+  --jigsaw-5: #250912;
+  --jigsaw-6: #0d1c2b;
+  --jigsaw-7: #213211;
+  --jigsaw-8: #3d1f0f;
+}
+.doku[data-theme="contrast"] .cell.given .cell-lock {
+  display: block;
+}
+.doku[data-theme="contrast"] {
+  --selected-note-color: #fff;
+}

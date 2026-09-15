@@ -1,0 +1,36 @@
+/* Paper — light, warm, ink-on-paper palette theme. */
+
+.doku[data-theme="paper"],
+[data-doku-theme="paper"] {
+  --bg: #faf7f1;
+  --surface: #eee9e3;
+  --surface-soft: #f5f0e9;
+  --text: #242938;
+  --muted: #626775;
+  --accent: #705caf;
+  --accent-ink: #fff;
+  --accent-soft: #e7def8;
+  --grid-line: #d2cbd3;
+  --region-line: #666375;
+  --error: #b71e45;
+  --dialog-bg: #faf7f1;
+  color-scheme: light;
+}
+.theme-paper {
+  background: #faf7f1;
+  color: #705caf;
+}
+.doku[data-theme="paper"] {
+  --jigsaw-0: #e4ddee;
+  --jigsaw-1: #d7eae0;
+  --jigsaw-2: #f0e5e0;
+  --jigsaw-3: #dde4ee;
+  --jigsaw-4: #ede7d4;
+  --jigsaw-5: #e4eff1;
+  --jigsaw-6: #eddee8;
+  --jigsaw-7: #eff2e9;
+  --jigsaw-8: #e6d4d1;
+}
+.doku[data-theme="paper"] {
+  --selected-note-color: #242938;
+}

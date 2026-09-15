@@ -1,0 +1,219 @@
+/* Doodle — notebook-paper texture, hand-drawn borders, ink-blue accents. */
+
+.doku[data-theme="doodle"] .cell.hue-filled:not(.selected):not(.matching) {
+  box-shadow: inset 0 0 0 2px #26292e33;
+}
+.doku[data-theme="doodle"],
+[data-doku-theme="doodle"] {
+  --bg: #f7f2e7;
+  --surface: #fffdf8e8;
+  --surface-soft: #d9ebf4cc;
+  --text: #26292e;
+  --muted: #5b6168;
+  --accent: #235f91;
+  --accent-ink: #fffdf8;
+  --accent-soft: #d9ebf4;
+  --grid-line: #768a96;
+  --region-line: #292d31;
+  --error: #b21628;
+  --dialog-bg: #fffdf8;
+  color-scheme: light;
+}
+.theme-doodle {
+  background: #f7f2e7 url("/assets/themes/doodle-notebook.webp") center/cover;
+  color: #26292e;
+  border: 2px solid #26292e;
+  border-radius: 8px 3px 10px 4px;
+  box-shadow: 2px 3px 0 #768a96;
+}
+.doku[data-theme="doodle"] {
+  font-family: "Comic Sans MS", "Bradley Hand", cursive;
+  background-color: var(--bg);
+  background-image: url("/assets/themes/doodle-notebook.webp");
+  background-size: 100% auto;
+  background-position: center top;
+  background-repeat: repeat-y;
+  background-attachment: fixed;
+}
+.doku[data-theme="doodle"] .brand,
+.doku[data-theme="doodle"] h1,
+.doku[data-theme="doodle"] h2,
+.doku[data-theme="doodle"] h3 {
+  font-family: "Comic Sans MS", "Bradley Hand", cursive;
+  letter-spacing: -0.025em;
+  text-shadow: 1px 2px 0 #fff;
+}
+.doku[data-theme="doodle"] .eyebrow {
+  color: #235f91;
+  letter-spacing: 0.14em;
+}
+.doku[data-theme="doodle"] .board {
+  border: 3px solid #292d31;
+  border-radius: 9px 3px 12px 5px;
+  background: #fffdf8e8;
+  box-shadow: 5px 6px 0 #6c7e88;
+  transform: rotate(0.25deg);
+}
+.doku[data-theme="doodle"] .cell {
+  background: #fffdf8d9;
+  font-family: "Comic Sans MS", "Bradley Hand", cursive !important;
+  font-weight: 700 !important;
+}
+.doku[data-theme="doodle"] .cell.region-1 {
+  background: #d9ebf4d9;
+}
+.doku[data-theme="doodle"] .cell.matching {
+  background: #f4d468;
+  color: #26292e;
+}
+.doku[data-theme="doodle"] .notes-grid .note-match {
+  background: #f4d468;
+  color: #26292e;
+  border-radius: 3px 1px 3px 1px;
+  box-shadow: 1px 1px 0 #92877a;
+}
+.doku[data-theme="doodle"] .cell.selected {
+  background: #f2c9bf;
+  box-shadow: inset 0 0 0 3px #c83f35;
+}
+.doku[data-theme="doodle"] .icon-button,
+.doku[data-theme="doodle"] .labeled-icon > span,
+.doku[data-theme="doodle"] .keypad > button,
+.doku[data-theme="doodle"] .primary,
+.doku[data-theme="doodle"] .secondary,
+.doku[data-theme="doodle"] .type-option,
+.doku[data-theme="doodle"] .level-options button,
+.doku[data-theme="doodle"] .input-order select {
+  border: 2px solid #292d31;
+  border-radius: 9px 4px 11px 5px;
+  background: #fffdf8e8;
+  box-shadow: 3px 4px 0 #768a96;
+}
+.doku[data-theme="doodle"] .keypad > button {
+  font-family: "Comic Sans MS", "Bradley Hand", cursive !important;
+  font-weight: 700;
+  background: #fffdf8;
+}
+.doku[data-theme="doodle"] .keypad > button:nth-child(3n + 1) {
+  transform: rotate(-1deg);
+}
+.doku[data-theme="doodle"] .keypad > button:nth-child(3n) {
+  transform: rotate(0.8deg);
+}
+.doku[data-theme="doodle"] .keypad > button.active {
+  background: #f4d468;
+  color: #26292e;
+  transform: translate(2px, 3px) rotate(-0.5deg);
+  box-shadow:
+    1px 1px 0 #768a96,
+    inset 0 0 0 2px #c83f35;
+}
+.doku[data-theme="doodle"] .pen-toggle {
+  border: 2px solid #292d31;
+  border-radius: 12px 4px 10px 5px;
+  background: #fffdf8e8;
+  box-shadow: 3px 4px 0 #768a96;
+  transform: rotate(-0.4deg);
+}
+.doku[data-theme="doodle"] .pen-toggle button {
+  border-radius: 8px 3px 10px 4px;
+}
+.doku[data-theme="doodle"] .timer {
+  border: 2px solid #292d31;
+  border-radius: 8px 3px 10px 4px;
+  background: #fffdf8e8;
+  color: #235f91;
+  box-shadow: 3px 3px 0 #768a96;
+  transform: rotate(1deg);
+}
+.doku[data-theme="doodle"] .page,
+.doku[data-theme="doodle"] .home-content {
+  background: #fffdf8bd;
+  padding-inline: 18px;
+  border-radius: 7px 15px 5px 11px;
+}
+.doku[data-theme="doodle"] .history-icon,
+.doku[data-theme="doodle"] .share-link,
+.doku[data-theme="doodle"] .notice {
+  border: 2px solid #292d31;
+  border-radius: 7px 3px 9px 4px;
+  background: #fffdf8e8;
+  box-shadow: 3px 3px 0 #768a96;
+}
+.doku[data-theme="doodle"] .primary {
+  background: #c83f35;
+  color: #fffdf8;
+}
+html[data-doku-theme="doodle"] .bottom-sheet {
+  border: 3px solid #292d31;
+  border-bottom: 0;
+  border-radius: 12px 5px 0 0;
+  background: #fffdf8 url("/assets/themes/doodle-notebook.webp") center top/100%
+    auto repeat-y;
+  box-shadow: 0 -7px 0 #768a96;
+  font-family: "Comic Sans MS", "Bradley Hand", cursive;
+}
+@media (max-width: 700px) {
+  .doku[data-theme="doodle"] .page,
+  .doku[data-theme="doodle"] .home-content {
+    padding-inline: 10px;
+  }
+}
+.doku[data-theme="doodle"] {
+  --jigsaw-0: #fffdf8e8;
+  --jigsaw-1: #d9ebf4dc;
+  --jigsaw-2: #f5e7bcdc;
+  --jigsaw-3: #f3d9d5dc;
+  --jigsaw-4: #dcebdadc;
+  --jigsaw-5: #e8ddf1dc;
+  --jigsaw-6: #f1dfccdc;
+  --jigsaw-7: #d9ece9dc;
+  --jigsaw-8: #e5e5dedc;
+}
+.doku[data-theme="doodle"] .board[data-variant="jigsaw"] .cell.matching {
+  background: #f4d468;
+}
+.doku[data-theme="doodle"] .board[data-variant="jigsaw"] .cell.selected {
+  background: #f2c9bf;
+}
+.doku[data-theme="doodle"] {
+  --theme-value-font: "Comic Sans MS", "Bradley Hand", cursive;
+  --theme-value-weight: 700;
+  --selected-note-color: #26292e;
+  --active-key-bg: #f4d468;
+  --active-key-ink: #26292e;
+}
+.doku[data-theme="doodle"] .cell.selected {
+  background: #d9ebf4;
+  box-shadow: inset 0 0 0 3px #235f91;
+}
+.doku[data-theme="doodle"] .primary {
+  background: #235f91;
+  color: #fff;
+}
+.doku[data-theme="doodle"] .keypad > button.active {
+  box-shadow:
+    0 4px 0 #768a96,
+    inset 0 0 0 2px #235f91;
+}
+.doku[data-theme="doodle"] .brand > span,
+.doku[data-theme="doodle"] .eyebrow,
+.doku[data-theme="doodle"] .type-option > svg {
+  color: #235f91;
+}
+.theme-peek-doodle {
+  --peek-cell: #fffdf8;
+  --peek-ink: #26292e;
+  --peek-lit: #f4d468;
+  --peek-lit-ink: #26292e;
+  background: #f7f2e7 url("/assets/themes/doodle-notebook.webp") center/cover;
+  color: #26292e;
+  border: 2px solid #292d31;
+  border-radius: 9px 3px 11px 5px;
+  box-shadow: 6px 7px 0 #768a96;
+  font-family: "Comic Sans MS", "Bradley Hand", cursive;
+}
+.doku[data-theme="doodle"] .roadmap-lane,
+.doku[data-theme="doodle"] .roadmap-card {
+  border-width: 2px;
+}

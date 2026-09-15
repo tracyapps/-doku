@@ -1,0 +1,35 @@
+/* Plum — dark, jewel-toned palette theme. */
+
+.doku[data-theme="plum"],
+[data-doku-theme="plum"] {
+  --bg: #181023;
+  --surface: #3b2d4c;
+  --surface-soft: #2c223a;
+  --text: #fbf5ff;
+  --muted: #c7b5d9;
+  --accent: #ecc0f7;
+  --accent-ink: #35213d;
+  --accent-soft: #594062;
+  --grid-line: #594665;
+  --region-line: #c4a9d2;
+  --error: #ffaba6;
+  --dialog-bg: #30233e;
+}
+.theme-plum {
+  background: #241a32;
+  color: #ecc0f7;
+}
+.doku[data-theme="plum"] {
+  --jigsaw-0: #211f33;
+  --jigsaw-1: #143758;
+  --jigsaw-2: #16275c;
+  --jigsaw-3: #571a4c;
+  --jigsaw-4: #2f2a63;
+  --jigsaw-5: #4a0e32;
+  --jigsaw-6: #303670;
+  --jigsaw-7: #2b1532;
+  --jigsaw-8: #331b54;
+}
+.doku[data-theme="plum"] {
+  --selected-note-color: #fff;
+}

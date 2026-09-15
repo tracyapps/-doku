@@ -109,10 +109,13 @@ type Theme =
   | "paper"
   | "retro"
   | "comic"
+  | "comic-dark"
   | "doodle"
   | "glass"
   | "rounded"
+  | "rounded-dark"
   | "contrast"
+  | "blackboard"
   | "plum";
 type Settings = {
   theme: Theme;
@@ -145,11 +148,14 @@ const defaults: Settings = {
 const themeOptions: { id: Theme; label: string }[] = [
   { id: "retro", label: "Retro" },
   { id: "comic", label: "Comic book" },
+  { id: "comic-dark", label: "Comic Dark" },
   { id: "doodle", label: "Doodle" },
   { id: "glass", label: "Glass" },
   { id: "rounded", label: "Web 2.0" },
+  { id: "rounded-dark", label: "Web 2.0 Dark" },
   { id: "night", label: "Night" },
   { id: "paper", label: "Paper" },
+  { id: "blackboard", label: "Blackboard" },
   { id: "contrast", label: "Contrast" },
   { id: "plum", label: "Plum" },
 ];

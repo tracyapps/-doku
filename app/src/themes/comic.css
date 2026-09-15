@@ -1,0 +1,334 @@
+/* Comic Book — panel borders, impact-burst highlights, rotated controls. */
+
+.doku[data-theme="comic"] .cell.hue-filled:not(.selected):not(.matching) {
+  box-shadow: inset 0 0 0 3px #171717;
+}
+.doku[data-theme="comic"],
+[data-doku-theme="comic"] {
+  --bg: #fff2c2;
+  --surface: #fffdf3;
+  --surface-soft: #70c9ec;
+  --text: #171717;
+  --muted: #56463d;
+  --accent: #df3328;
+  --accent-ink: #fff;
+  --accent-soft: #ffdc46;
+  --grid-line: #171717;
+  --region-line: #171717;
+  --error: #a50f16;
+  --dialog-bg: #fff4cc;
+  color-scheme: light;
+}
+.theme-comic {
+  background: #ffdc46;
+  color: #171717;
+  border: 3px solid #171717;
+  border-radius: 2px;
+  box-shadow: 3px 3px 0 #df3328;
+  transform: rotate(-1deg);
+}
+.doku[data-theme="comic"] {
+  font-family: "DM Sans", sans-serif;
+  background: var(--bg);
+}
+.doku[data-theme="comic"] .brand,
+.doku[data-theme="comic"] h1,
+.doku[data-theme="comic"] h2,
+.doku[data-theme="comic"] h3 {
+  font-family: "Outfit", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  text-shadow: 3px 3px 0 #70c9ec;
+}
+.doku[data-theme="comic"] .brand > span {
+  color: #df3328;
+  -webkit-text-stroke: 1px #171717;
+}
+.doku[data-theme="comic"] .eyebrow {
+  display: inline-block;
+  background: #171717;
+  color: #fff;
+  padding: 4px 9px;
+  transform: rotate(-1deg);
+}
+.doku[data-theme="comic"] .board {
+  border: 4px solid #171717;
+  border-radius: 2px 9px 3px 7px;
+  background: #171717;
+  box-shadow: 9px 9px 0 #df3328;
+  transform: rotate(-0.35deg);
+}
+.doku[data-theme="comic"] .cell {
+  background: #fffdf3;
+  color: #171717;
+  font-family: "Outfit", sans-serif !important;
+  font-weight: 900 !important;
+}
+.doku[data-theme="comic"] .cell.region-1 {
+  background: #70c9ec;
+}
+.doku[data-theme="comic"] .cell.matching {
+  background: #ffdc46;
+  color: #171717;
+  overflow: visible;
+}
+.doku[data-theme="comic"] .cell.selected {
+  background: #df3328;
+  color: #fff;
+  box-shadow: inset 0 0 0 4px #171717;
+}
+.doku[data-theme="comic"] .icon-button,
+.doku[data-theme="comic"] .labeled-icon > span,
+.doku[data-theme="comic"] .keypad > button,
+.doku[data-theme="comic"] .primary,
+.doku[data-theme="comic"] .secondary,
+.doku[data-theme="comic"] .type-option,
+.doku[data-theme="comic"] .level-options button,
+.doku[data-theme="comic"] .input-order select {
+  border: 3px solid #171717;
+  border-radius: 2px 7px 3px 5px;
+  box-shadow: 5px 5px 0 #171717;
+  font-weight: 800;
+}
+.doku[data-theme="comic"] .keypad > button:nth-child(odd),
+.doku[data-theme="comic"] .type-option:nth-child(odd) {
+  transform: rotate(-1deg);
+}
+.doku[data-theme="comic"] .keypad > button:nth-child(even),
+.doku[data-theme="comic"] .type-option:nth-child(even) {
+  transform: rotate(0.8deg);
+}
+.doku[data-theme="comic"] .keypad > button.active {
+  background: #df3328;
+  color: #fff;
+  transform: translate(3px, 3px) rotate(-1.5deg);
+  box-shadow: 2px 2px 0 #171717;
+  overflow: visible;
+}
+.doku[data-theme="comic"] .keypad > button.active .key-value {
+  position: absolute;
+  z-index: 4;
+  top: -8px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 2px solid #171717;
+  border-radius: 50%;
+  background: #70c9ec;
+  color: #171717;
+  font-size: 16px;
+  box-shadow: 2px 2px 0 #171717;
+}
+.doku[data-theme="comic"] .pen-toggle {
+  height: 48px;
+  border: 3px solid #171717;
+  border-radius: 2px 9px 3px 7px;
+  background: #fff;
+  box-shadow: 5px 5px 0 #171717;
+  transform: rotate(0.5deg);
+}
+.doku[data-theme="comic"] .pen-toggle button {
+  border-radius: 2px;
+}
+.doku[data-theme="comic"] .pen-toggle button.chosen {
+  box-shadow: inset 0 0 0 2px #171717;
+}
+.doku[data-theme="comic"] .timer {
+  border: 3px solid #171717;
+  border-radius: 2px 9px 3px 7px;
+  background: #ffdc46;
+  color: #171717;
+  box-shadow: 4px 4px 0 #171717;
+  transform: rotate(1deg);
+}
+.doku[data-theme="comic"] .history-icon,
+.doku[data-theme="comic"] .share-link,
+.doku[data-theme="comic"] .notice,
+.doku[data-theme="comic"] .achievement {
+  border: 3px solid #171717;
+  box-shadow: 5px 5px 0 #171717;
+  padding: 18px;
+  background: #fff;
+}
+.doku[data-theme="comic"] .history-list,
+.doku[data-theme="comic"] footer {
+  border-color: #171717;
+  border-width: 3px;
+}
+.doku[data-theme="comic"] .primary {
+  background: #df3328;
+  color: #fff;
+}
+html[data-doku-theme="comic"] .bottom-sheet {
+  border: 4px solid #171717;
+  border-bottom: 0;
+  border-radius: 4px 12px 0 0;
+  box-shadow: 0 -8px 0 #df3328;
+}
+html[data-doku-theme="comic"] .sheet-title {
+  font-family: "Outfit", sans-serif;
+  text-transform: uppercase;
+  text-shadow: 3px 3px 0 #70c9ec;
+}
+@media (max-width: 700px) {
+  .doku[data-theme="comic"] .board {
+    box-shadow: 6px 7px 0 #df3328;
+  }
+}
+.doku[data-theme="comic"] {
+  --jigsaw-0: #fffdf3;
+  --jigsaw-1: #70c9ec;
+  --jigsaw-2: #ffd85b;
+  --jigsaw-3: #f6a2a0;
+  --jigsaw-4: #9bd3a7;
+  --jigsaw-5: #cbb7ef;
+  --jigsaw-6: #f4b477;
+  --jigsaw-7: #8fded6;
+  --jigsaw-8: #d7d7d1;
+}
+.doku[data-theme="comic"] .board[data-variant="jigsaw"] .cell.matching,
+.doku[data-theme="comic"] .board[data-variant="jigsaw"] .cell.selected,
+.doku[data-theme="comic"] .cell.matching,
+.doku[data-theme="comic"] .cell.selected {
+  background: var(--region-fill, #fffdf3);
+  color: #171717;
+}
+.doku[data-theme="comic"] .cell.selected {
+  box-shadow: inset 0 0 0 4px #df3328;
+}
+.doku[data-theme="comic"] .cell.selected.matching {
+  box-shadow: inset 0 0 0 4px #171717;
+}
+.doku[data-theme="comic"] .cell.matching {
+  overflow: visible;
+}
+.doku[data-theme="comic"] .cell-value,
+.doku[data-theme="comic"] .notes-grid .note-match,
+.doku[data-theme="comic"] .keypad > button.active .key-value {
+  position: relative;
+  z-index: 2;
+  color: #171717;
+  isolation: isolate;
+}
+.doku[data-theme="comic"] .cell.matching .cell-value,
+.doku[data-theme="comic"] .notes-grid .note-match,
+.doku[data-theme="comic"] .keypad > button.active .key-value {
+  filter: drop-shadow(1px 1px 0 #d81f22) drop-shadow(3px 3px 0 #171717);
+}
+.doku[data-theme="comic"] .cell.matching .cell-value::before,
+.doku[data-theme="comic"] .notes-grid .note-match::before,
+.doku[data-theme="comic"] .keypad > button.active .key-value::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  background: #ffe14a;
+  clip-path: polygon(
+    50% 3%,
+    63% 21%,
+    82% 11%,
+    79% 32%,
+    99% 27%,
+    86% 47%,
+    100% 60%,
+    80% 62%,
+    90% 83%,
+    69% 74%,
+    65% 98%,
+    50% 80%,
+    35% 98%,
+    31% 74%,
+    10% 83%,
+    20% 62%,
+    0% 60%,
+    14% 47%,
+    1% 27%,
+    21% 32%,
+    18% 11%,
+    37% 21%
+  );
+  filter: drop-shadow(2.5px 2px 0 #d81f22) drop-shadow(5px 5px 0 #171717);
+  animation: comic-burst 0.28s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+.doku[data-theme="comic"] .cell.matching .cell-value::before {
+  inset: -14px -16px;
+  transform: rotate(-5deg);
+}
+.doku[data-theme="comic"] .notes-grid .note-match {
+  font-weight: 900;
+  background: transparent;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.doku[data-theme="comic"] .notes-grid .note-match::before {
+  inset: -2px -2.5px;
+  transform: rotate(6deg);
+  filter: drop-shadow(-0.8px 0 0 #d81f22) drop-shadow(0.8px 0 0 #d81f22)
+    drop-shadow(0 -0.8px 0 #d81f22) drop-shadow(0 0.8px 0 #d81f22)
+    drop-shadow(0.6px 0.6px 0 #d81f22) drop-shadow(-0.6px 0.6px 0 #d81f22)
+    drop-shadow(0.6px -0.6px 0 #d81f22) drop-shadow(-0.6px -0.6px 0 #d81f22)
+    drop-shadow(1.3px 1.3px 0 #171717);
+}
+.doku[data-theme="comic"] .keypad > button.active {
+  background: #fffdf3;
+  color: #171717;
+  transform: translate(3px, 3px) rotate(-1.5deg);
+  box-shadow: 2px 2px 0 #171717;
+  overflow: visible;
+}
+.doku[data-theme="comic"] .keypad > button.active .key-value {
+  position: relative;
+  top: auto;
+  right: auto;
+  display: inline;
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 32px;
+  box-shadow: none;
+}
+.doku[data-theme="comic"] .keypad > button.active .key-value::before {
+  inset: -18px -26px;
+  transform: rotate(-4deg);
+}
+@keyframes comic-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.35) rotate(-12deg);
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .doku[data-theme="comic"] .cell.matching .cell-value::before,
+  .doku[data-theme="comic"] .notes-grid .note-match::before,
+  .doku[data-theme="comic"] .keypad > button.active .key-value::before {
+    animation: none;
+  }
+}
+.doku[data-theme="comic"] {
+  --theme-value-font: "Outfit", sans-serif;
+  --theme-value-weight: 900;
+  --selected-note-color: #171717;
+}
+.theme-peek-comic {
+  --peek-cell: #fffdf3;
+  --peek-ink: #171717;
+  --peek-lit: #ffdc46;
+  --peek-lit-ink: #171717;
+  background: #70c9ec;
+  color: #171717;
+  border: 3px solid #171717;
+  border-radius: 2px 8px 3px 5px;
+  box-shadow: 7px 8px 0 #df3328;
+}
+.doku[data-theme="comic"] .roadmap-lane,
+.doku[data-theme="comic"] .roadmap-card {
+  border-width: 2px;
+}

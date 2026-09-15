@@ -1,0 +1,42 @@
+/* Night — the default theme. Its color/typography tokens also exist as the
+   bare fallback in _base.css (used by chrome that renders with no theme set,
+   e.g. the style guide page's own nav) — this file makes them explicit and
+   editable like every other theme. */
+
+.doku[data-theme="night"],
+[data-doku-theme="night"] {
+  --bg: #0d1928;
+  --surface: #1c2a3b;
+  --surface-soft: #142233;
+  --text: #f5f6fa;
+  --muted: #a9bbd2;
+  --accent: #9bf0c4;
+  --accent-ink: #102f25;
+  --accent-soft: #203e3c;
+  --grid-line: #35465b;
+  --region-line: #a7bbd4;
+  --error: #ff9eaa;
+  --dialog-bg: #172536;
+}
+.doku[data-theme="night"] {
+  --jigsaw-0: #151e28;
+  --jigsaw-1: #202d37;
+  --jigsaw-2: #2b3146;
+  --jigsaw-3: #141c1f;
+  --jigsaw-4: #373953;
+  --jigsaw-5: #1f2b2d;
+  --jigsaw-6: #3b4c68;
+  --jigsaw-7: #28273f;
+  --jigsaw-8: #33414c;
+}
+.doku[data-theme="night"] {
+  --theme-value-font: "DM Sans", sans-serif;
+  --theme-value-weight: 500;
+  --selected-note-color: #f5f6fa;
+  --active-key-bg: var(--accent);
+  --active-key-ink: var(--accent-ink);
+}
+.theme-night {
+  background: #0d1928;
+  color: #9bf0c4;
+}

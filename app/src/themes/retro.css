@@ -1,0 +1,166 @@
+/* Retro — game-console skin: monospace type, hard shadows, chunky borders. */
+
+.doku[data-theme="retro"] .cell.hue-filled:not(.selected):not(.matching) {
+  box-shadow: inset 0 0 0 2px #09192c;
+}
+.doku[data-theme="retro"],
+[data-doku-theme="retro"] {
+  --bg: #173252;
+  --surface: #f1c85b;
+  --surface-soft: #244b70;
+  --text: #fff4d6;
+  --muted: #e6cf9c;
+  --accent: #ff6b3d;
+  --accent-ink: #182846;
+  --accent-soft: #ffe09a;
+  --grid-line: #31597d;
+  --region-line: #fff0bd;
+  --error: #ffaea0;
+  --dialog-bg: #1d3c60;
+  color-scheme: dark;
+}
+.theme-retro {
+  background: #173252;
+  color: #ffb14a;
+  border-color: #fff0bd;
+  border-radius: 3px;
+  box-shadow: 3px 3px 0 #ff6b3d;
+}
+.doku[data-theme="retro"] {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  background: var(--bg);
+}
+.doku[data-theme="retro"] .brand,
+.doku[data-theme="retro"] h1,
+.doku[data-theme="retro"] h2,
+.doku[data-theme="retro"] h3 {
+  font-family: "Outfit", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.015em;
+  text-shadow: 3px 3px 0 #0a1b31;
+}
+.doku[data-theme="retro"] .eyebrow {
+  color: #ffb14a;
+  letter-spacing: 0.22em;
+}
+.doku[data-theme="retro"] .board {
+  border: 6px double var(--region-line);
+  border-radius: 3px;
+  background: #0d2139;
+  box-shadow: 8px 8px 0 #08182b;
+}
+.doku[data-theme="retro"] .cell {
+  background: #173252;
+}
+.doku[data-theme="retro"] .cell.region-1 {
+  background: #1e4266;
+}
+.doku[data-theme="retro"] .cell.matching {
+  background: #ffb14a;
+  color: #152a45;
+  text-shadow: 1px 1px 0 #fff3be;
+}
+.doku[data-theme="retro"] .notes-grid .note-match {
+  background: #ffb14a;
+  color: #152a45;
+  border-radius: 1px;
+  box-shadow: 1px 1px 0 #09192c;
+}
+.doku[data-theme="retro"] .cell.selected {
+  background: #ff6b3d;
+  color: #fff;
+  box-shadow: inset 0 0 0 4px #fff0bd;
+}
+.doku[data-theme="retro"] .icon-button,
+.doku[data-theme="retro"] .labeled-icon > span,
+.doku[data-theme="retro"] .keypad > button,
+.doku[data-theme="retro"] .primary,
+.doku[data-theme="retro"] .secondary,
+.doku[data-theme="retro"] .type-option,
+.doku[data-theme="retro"] .level-options button,
+.doku[data-theme="retro"] .input-order select {
+  border: 2px solid #fff0bd;
+  border-radius: 4px;
+  box-shadow: 4px 4px 0 #09192c;
+}
+.doku[data-theme="retro"] .keypad > button {
+  background: #f1c85b;
+  color: #182846;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 800;
+  box-shadow:
+    0 6px 0 #9d6d2a,
+    0 8px 0 #09192c;
+}
+.doku[data-theme="retro"] .keypad > button.active {
+  background: #ff6b3d;
+  color: #fff;
+  transform: translateY(5px);
+  box-shadow:
+    0 1px 0 #9f321e,
+    0 3px 0 #09192c;
+}
+.doku[data-theme="retro"] .pen-toggle {
+  border: 2px solid #fff0bd;
+  border-radius: 4px;
+  background: #0d2139;
+  box-shadow: 4px 4px 0 #09192c;
+}
+.doku[data-theme="retro"] .pen-toggle button {
+  border-radius: 1px;
+}
+.doku[data-theme="retro"] .timer {
+  border: 2px solid #ffb14a;
+  border-radius: 4px;
+  background: #0d2139;
+  box-shadow: 3px 3px 0 #09192c;
+}
+.doku[data-theme="retro"] .type-option.chosen,
+.doku[data-theme="retro"] .level-options .chosen {
+  box-shadow:
+    4px 4px 0 #09192c,
+    inset 0 0 0 2px #fff0bd;
+}
+.doku[data-theme="retro"] .history-icon,
+.doku[data-theme="retro"] .share-link,
+.doku[data-theme="retro"] .notice {
+  border-radius: 3px;
+  box-shadow: 3px 3px 0 #09192c;
+}
+.doku[data-theme="retro"] .primary {
+  background: #ff6b3d;
+  color: #fff;
+}
+html[data-doku-theme="retro"] .bottom-sheet {
+  border: 3px solid #fff0bd;
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  box-shadow: 0 -9px 0 #09192c;
+}
+.doku[data-theme="retro"] {
+  --jigsaw-0: #24364c;
+  --jigsaw-1: #345965;
+  --jigsaw-2: #1d2135;
+  --jigsaw-3: #564c2e;
+  --jigsaw-4: #46657c;
+  --jigsaw-5: #1e1a2d;
+  --jigsaw-6: #4d7c86;
+  --jigsaw-7: #6c4d37;
+  --jigsaw-8: #312640;
+}
+.doku[data-theme="retro"] {
+  --theme-value-font:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --theme-value-weight: 800;
+  --selected-note-color: #fff;
+}
+.theme-peek-retro {
+  --peek-cell: #244b70;
+  --peek-ink: #fff4d6;
+  --peek-lit: #ff6b3d;
+  --peek-lit-ink: #fff;
+  background: #173252;
+  border: 3px double #fff0bd;
+  border-radius: 3px;
+  box-shadow: 7px 8px 0 #08182b;
+}

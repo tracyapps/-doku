@@ -1560,47 +1560,79 @@ html[data-doku-theme] .sheet-handle {
   --jigsaw-7: #28273f;
   --jigsaw-8: #33414c;
 }
+/* Jigsaw region-boundary outline: each boundary edge gets a couple-px band of
+   that cell's own region color, inset from the shared edge by a small gap on
+   each side, so a region's shape stays visible even when a selected or
+   matching cell's fill is swapped for the accent color. Which edges are
+   boundaries (and their color) is set per cell in Prototype.tsx via the
+   --edge-*-color custom properties (transparent when not a boundary).
+   Tune --region-gap / --region-outline-w below, or override either one in a
+   theme file's own jigsaw block to change just that theme's outline. */
+.board[data-variant="jigsaw"] .cell {
+  --edge-top-color: transparent;
+  --edge-right-color: transparent;
+  --edge-bottom-color: transparent;
+  --edge-left-color: transparent;
+  --region-gap: 2px;
+  --region-outline-w: 3px;
+  background-repeat: no-repeat;
+  background-image:
+    linear-gradient(var(--edge-top-color), var(--edge-top-color)),
+    linear-gradient(var(--edge-right-color), var(--edge-right-color)),
+    linear-gradient(var(--edge-bottom-color), var(--edge-bottom-color)),
+    linear-gradient(var(--edge-left-color), var(--edge-left-color));
+  background-size:
+    100% var(--region-outline-w),
+    var(--region-outline-w) 100%,
+    100% var(--region-outline-w),
+    var(--region-outline-w) 100%;
+  background-position:
+    top var(--region-gap) left 0,
+    top 0 right var(--region-gap),
+    bottom var(--region-gap) left 0,
+    top 0 left var(--region-gap);
+}
 .board[data-variant="jigsaw"] .cell[data-region="0"] {
   --region-fill: var(--jigsaw-0);
-  background: var(--region-fill);
+  background-color: var(--region-fill);
 }
 .board[data-variant="jigsaw"] .cell[data-region="1"] {
   --region-fill: var(--jigsaw-1);
-  background: var(--region-fill);
+  background-color: var(--region-fill);
 }
 .board[data-variant="jigsaw"] .cell[data-region="2"] {
   --region-fill: var(--jigsaw-2);
-  background: var(--region-fill);
+  background-color: var(--region-fill);
 }
 .board[data-variant="jigsaw"] .cell[data-region="3"] {
   --region-fill: var(--jigsaw-3);
-  background: var(--region-fill);
+  background-color: var(--region-fill);
 }
 .board[data-variant="jigsaw"] .cell[data-region="4"] {
   --region-fill: var(--jigsaw-4);
-  background: var(--region-fill);
+  background-color: var(--region-fill);
 }
 .board[data-variant="jigsaw"] .cell[data-region="5"] {
   --region-fill: var(--jigsaw-5);
-  background: var(--region-fill);
+  background-color: var(--region-fill);
 }
 .board[data-variant="jigsaw"] .cell[data-region="6"] {
   --region-fill: var(--jigsaw-6);
-  background: var(--region-fill);
+  background-color: var(--region-fill);
 }
 .board[data-variant="jigsaw"] .cell[data-region="7"] {
   --region-fill: var(--jigsaw-7);
-  background: var(--region-fill);
+  background-color: var(--region-fill);
 }
 .board[data-variant="jigsaw"] .cell[data-region="8"] {
   --region-fill: var(--jigsaw-8);
-  background: var(--region-fill);
+  background-color: var(--region-fill);
 }
 .board[data-variant="jigsaw"] .cell.matching {
-  background: var(--accent);
+  background-color: var(--accent);
 }
 .board[data-variant="jigsaw"] .cell.selected {
-  background: var(--accent-soft);
+  background-color: var(--accent-soft);
 }
 .cell.given .cell-value,
 .cell.given > .symbol {

@@ -285,10 +285,10 @@ html[data-doku-theme="rounded-dark"] .bottom-sheet {
   --jigsaw-8: #fa56c3;
 }
 .doku[data-theme="rounded-dark"] .board[data-variant="jigsaw"] .cell.matching {
-  background: #3b14ff;
+  background-color: #3b14ff;
 }
 .doku[data-theme="rounded-dark"] .board[data-variant="jigsaw"] .cell.selected {
-  background: #5623e2;
+  background-color: #5623e2;
 }
 .doku[data-theme="rounded-dark"] {
   --theme-value-weight: 700;

@@ -625,6 +625,22 @@ function SGJigsawBoard() {
             r < 8 && region !== SG_JIGSAW[i + 9]
               ? "var(--region-line)"
               : "var(--grid-line)",
+          "--edge-top-color":
+            r === 0 || region !== SG_JIGSAW[i - 9]
+              ? "var(--region-fill)"
+              : "transparent",
+          "--edge-right-color":
+            c === 8 || region !== SG_JIGSAW[i + 1]
+              ? "var(--region-fill)"
+              : "transparent",
+          "--edge-bottom-color":
+            r === 8 || region !== SG_JIGSAW[i + 9]
+              ? "var(--region-fill)"
+              : "transparent",
+          "--edge-left-color":
+            c === 0 || region !== SG_JIGSAW[i - 1]
+              ? "var(--region-fill)"
+              : "transparent",
         };
         return (
           <button
@@ -1951,6 +1967,22 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                       r < 8 && reg !== session.puzzle.regions[i + 9]
                         ? "var(--region-line)"
                         : "var(--grid-line)",
+                    "--edge-top-color":
+                      r === 0 || reg !== session.puzzle.regions[i - 9]
+                        ? "var(--region-fill)"
+                        : "transparent",
+                    "--edge-right-color":
+                      c === 8 || reg !== session.puzzle.regions[i + 1]
+                        ? "var(--region-fill)"
+                        : "transparent",
+                    "--edge-bottom-color":
+                      r === 8 || reg !== session.puzzle.regions[i + 9]
+                        ? "var(--region-fill)"
+                        : "transparent",
+                    "--edge-left-color":
+                      c === 0 || reg !== session.puzzle.regions[i - 1]
+                        ? "var(--region-fill)"
+                        : "transparent",
                   };
                   return (
                     <button

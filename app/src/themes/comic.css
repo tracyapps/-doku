@@ -192,7 +192,7 @@ html[data-doku-theme="comic"] .sheet-title {
 .doku[data-theme="comic"] .board[data-variant="jigsaw"] .cell.selected,
 .doku[data-theme="comic"] .cell.matching,
 .doku[data-theme="comic"] .cell.selected {
-  background: var(--region-fill, #fffdf3);
+  background-color: var(--region-fill, #fffdf3);
   color: #171717;
 }
 .doku[data-theme="comic"] .cell.selected {

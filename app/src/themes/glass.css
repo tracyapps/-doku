@@ -176,13 +176,13 @@ html[data-doku-theme="glass"] .bottom-sheet {
   --jigsaw-8: #d8f8ff18;
 }
 .doku[data-theme="glass"] .board[data-variant="jigsaw"] .cell.matching {
-  background: #75eff43d;
+  background-color: #75eff43d;
   box-shadow:
     inset 0 0 0 1px #75eff4,
     0 0 16px 2px color-mix(in srgb, var(--region-fill, #75eff4) 70%, #75eff4);
 }
 .doku[data-theme="glass"] .board[data-variant="jigsaw"] .cell.selected {
-  background: #75eff44d;
+  background-color: #75eff44d;
   box-shadow:
     inset 0 0 0 2px #bffcff,
     0 0 20px 3px color-mix(in srgb, var(--region-fill, #75eff4) 70%, #75eff4);

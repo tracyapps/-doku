@@ -220,7 +220,7 @@ html[data-doku-theme="comic-dark"] .sheet-title {
 .doku[data-theme="comic-dark"] .board[data-variant="jigsaw"] .cell.selected,
 .doku[data-theme="comic-dark"] .cell.matching,
 .doku[data-theme="comic-dark"] .cell.selected {
-	background: var(--region-fill, #fffdf3);
+	background-color: var(--region-fill, #fffdf3);
 	color: #171717;
 }
 

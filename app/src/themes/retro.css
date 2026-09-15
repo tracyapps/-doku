@@ -56,7 +56,7 @@
   background: #1e4266;
 }
 .doku[data-theme="retro"] .cell.matching {
-  background: #ffb14a;
+  background-color: #ffb14a;
   color: #152a45;
   text-shadow: 1px 1px 0 #fff3be;
 }
@@ -67,7 +67,7 @@
   box-shadow: 1px 1px 0 #09192c;
 }
 .doku[data-theme="retro"] .cell.selected {
-  background: #ff6b3d;
+  background-color: #ff6b3d;
   color: #fff;
   box-shadow: inset 0 0 0 4px #fff0bd;
 }

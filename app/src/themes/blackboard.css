@@ -171,10 +171,10 @@ html[data-doku-theme="blackboard"] .bottom-sheet {
   --jigsaw-8: #e5e5dedc;
 }
 .doku[data-theme="blackboard"] .board[data-variant="jigsaw"] .cell.matching {
-  background: #f4d468;
+  background-color: #f4d468;
 }
 .doku[data-theme="blackboard"] .board[data-variant="jigsaw"] .cell.selected {
-  background: #f2c9bf;
+  background-color: #f2c9bf;
 }
 .doku[data-theme="blackboard"] {
   --theme-value-font: "Comic Sans MS", "Bradley Hand", cursive;

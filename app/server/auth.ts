@@ -18,7 +18,11 @@ import { DatabaseSync } from "node:sqlite";
 
 const env = process.env;
 const production = env.NODE_ENV === "production" || !!env.VERCEL;
-export const publicURL = env.BETTER_AUTH_URL || "http://127.0.0.1:5173";
+export const publicURL =
+  env.BETTER_AUTH_URL ||
+  // On Vercel, fall back to the production domain so passkeys and OAuth
+  // callbacks never point at the local dev address.
+  (env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://127.0.0.1:5173");
 
 /** *doku's own tables, created by the same migration as the auth tables. */
 export const dokuSchema = {

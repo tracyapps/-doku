@@ -193,3 +193,18 @@ These proposals support the user's goal: Sue can celebrate speed while another p
 - September 11 screenshot at 1:37:16 AM: wildcard naming, accented prefixes, and a chunky theme font example.
 - September 11 screenshots at 1:47:06 and 1:49:44 AM: static difficulty information, selected-value and note highlighting. Hearts and limited hints in these third-party references are explicitly not requirements.
 - September 11 screenshot at 1:54:14 AM: completion celebration inspiration.
+
+## Phase 2 plan — daily puzzles, profiles, achievements, leaderboards (Sep 26, 2026)
+
+Direction change: *doku gets its own optional accounts so friends can play without Discord. Discord stays as one way to sign in and share. Guest play stays accountless and local; an account only adds sync, friends, and leaderboards.
+
+### Order of work
+
+1. **Phone fit + installable web app** — done. Game screen fits one viewport; board gets first claim on space; compact header; input order moved to Settings.
+2. **Today's puzzles (solo, local)** — start hub with *Today's puzzles* (easy, medium, hard as three separate puzzles, seeded by date + level) above *Choose your own*. The day's variant follows a weekly rotation (see `src/game/daily.ts`). Dailies are resumable side by side with a free-play game. Every finished game writes a compact play record.
+3. **Consistency, not streaks** — no streak counters or "don't break it" framing. Show the share of days played: this week, this month, this year ("18 of 26 days"). A missed day never resets anything.
+4. **Achievements engine + profile badge shelf** — data-driven: each achievement is a definition (id, name, description, category, art, hidden, repeatable) plus a pure function over play records. Awards are derived from history, never stored as the source of truth, so the same code can run on the server later and new achievements apply retroactively. Names and artwork (from Sue) replace the placeholders; the starter list is marked `draft`.
+5. **Accounts + normalized storage** — replace the single JSON row with real tables (users, play records, awards cache, friendships, challenge attempts). Sign-in: passkeys + email magic link; Discord and Sign in with Apple as options. Local guest records upload on first sign-in.
+6. **Profiles + friends** — display name, avatar, featured badges, consistency, totals. Friend by invite link/code (no contact scraping).
+7. **Leaderboards** — period (week / month / year / all time) × scope (global / friends). Metric to be decided; keep dimensions separate rather than one blended score. Self-reported, friendly comparison (same caveat as challenges).
+8. **Wrapped native app** — Capacitor for iOS + Android from the same React code.

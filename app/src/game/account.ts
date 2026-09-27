@@ -114,7 +114,11 @@ export async function addPasskey() {
   if (result?.error) throw new Error(result.error.message || "Couldn't add a passkey.");
 }
 export async function signInWithProvider(provider: "discord" | "apple") {
-  await authClient.signIn.social({ provider, callbackURL: back, errorCallbackURL: `${back}?signin=error` });
+  const result = await authClient.signIn.social({ provider, callbackURL: back, errorCallbackURL: `${back}?signin=error` });
+  if (result?.error) {
+    const name = provider === "discord" ? "Discord" : "Apple";
+    throw new Error(result.error.message || `Couldn't start ${name} sign-in. Please try again.`);
+  }
 }
 export const passkeysSupported = () =>
   typeof window !== "undefined" && window.isSecureContext && "PublicKeyCredential" in window;

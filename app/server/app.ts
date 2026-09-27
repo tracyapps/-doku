@@ -52,8 +52,13 @@ export function makeApp(store = createStore()) {
     try {
       const a = await accounts;
       if (!a) fail("Accounts aren't set up on this server yet.", 503);
-      a!.handler(req, res);
+      // Awaited so a failure (e.g. database tables not migrated) becomes an
+      // error response instead of an unhandled rejection that hangs the request.
+      await a!.handler(req, res);
     } catch (e) {
+      console.error("Auth request failed:", e);
+      if ((e as { code?: string }).code === "SCHEMA_MISMATCH")
+        return next(Object.assign(new Error("Accounts are being set up. Please try again later."), { status: 503 }));
       next(e);
     }
   });

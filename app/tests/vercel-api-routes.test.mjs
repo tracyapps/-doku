@@ -7,6 +7,10 @@ const routes = [
   "api/challenges/[id].ts",
   "api/challenges/[id]/attempts.ts",
   "api/challenges/[id]/results.ts",
+  "api/auth/[...all].ts",
+  "api/me.ts",
+  "api/me/[...all].ts",
+  "api/account/config.ts",
 ];
 
 test("nested API routes have explicit Vercel function entrypoints", async () => {

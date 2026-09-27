@@ -2556,3 +2556,575 @@ html[data-doku-theme] .sheet-handle {
     gap: 16px 12px;
   }
 }
+
+/* ==========================================================================
+   Phone game fit
+   On phones the game screen is exactly one viewport tall, and the BOARD
+   gets first claim on space: it's as wide as the screen allows, and only
+   shrinks if the controls below would drop under their minimum height.
+   The keypad then stretches or squeezes to fill whatever is left.
+   - 100dvh follows Safari's toolbars as they show/hide.
+   - .play-layout is a size container; --board is the board's side length,
+     written with container units (cqw/cqh) so it resolves against it.
+   - --controls-min = smallest the tools row + keypad may get (40px keys).
+   - Installed (home screen) app pads for the notch and home indicator.
+   The mobile preview (.in-preview) keeps its own layout.
+   ========================================================================== */
+@media (max-width: 700px) {
+  html:has(.doku:not(.in-preview) > .game-page) {
+    overscroll-behavior: none;
+  }
+  .doku:not(.in-preview):has(> .game-page) {
+    padding-inline: max(16px, env(safe-area-inset-left))
+      max(16px, env(safe-area-inset-right));
+    padding-bottom: 0;
+  }
+  .doku:not(.in-preview) > .game-page {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    padding-block: max(10px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-bottom));
+  }
+  .doku:not(.in-preview) .game-header {
+    flex: none;
+  }
+  .doku:not(.in-preview) .play-layout {
+    --controls-min: 196px;
+    --board: max(180px, min(100cqw, 100cqh - var(--controls-min)));
+    container-type: size;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: stretch; /* base sets start, which collapses children */
+    min-height: 0;
+  }
+  /* leave room for "Beautifully solved." under the board */
+  .doku:not(.in-preview) .play-layout:has(.solved-banner) {
+    --board: max(180px, min(100cqw, 100cqh - var(--controls-min) - 58px));
+  }
+  .doku:not(.in-preview) .board-wrap {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  .doku:not(.in-preview) .board-wrap > .board {
+    flex: none;
+    width: var(--board);
+  }
+  .doku:not(.in-preview) .board-wrap .cell {
+    font-size: calc(var(--board) / 9 * 0.6 * var(--value-scale));
+  }
+  .doku:not(.in-preview) .board-wrap .notes-grid {
+    font-size: calc(var(--board) / 9 * 0.22 * var(--note-scale));
+  }
+
+  /* Controls fill the rest, anchored to the bottom (thumb reach). */
+  .doku:not(.in-preview) .game-controls {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 0;
+    margin-top: 10px;
+  }
+  .doku:not(.in-preview) .game-controls .editing-controls {
+    flex: none;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  /* Undo / Erase: icon-only circles; the word stays for screen readers */
+  .doku:not(.in-preview) .game-controls .labeled-icon > span {
+    width: 40px;
+    height: 40px;
+  }
+  .doku:not(.in-preview) .game-controls .labeled-icon > span svg {
+    width: 24px;
+    height: 24px;
+  }
+  .doku:not(.in-preview) .game-controls .labeled-icon small {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .doku:not(.in-preview) .game-controls .pen-toggle {
+    height: 40px;
+    padding-block: 3px;
+  }
+  .doku:not(.in-preview) .game-controls .pen-toggle button {
+    padding-block: 4px;
+  }
+  .doku:not(.in-preview) .game-controls .keypad {
+    flex: 1 1 auto;
+    grid-template-rows: repeat(3, minmax(40px, 1fr));
+    gap: 10px 8px;
+    max-height: 236px; /* keys top out around 72px tall */
+    min-height: 140px;
+  }
+  .doku:not(.in-preview) .game-controls .keypad > button {
+    height: auto;
+    min-height: 0;
+  }
+}
+
+/* ==========================================================================
+   Compact game header (all sizes)
+   [‹ logo]        [timer / level]        [gear] [more]
+   The logo doubles as "Back to menu". The variant is already in the logo
+   (sudoku / huedoku / jigsadoku), so only the level shows, small.
+   ========================================================================== */
+.doku .game-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto; /* logo | centered timer | actions */
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.doku .game-title {
+  margin: 0;
+  min-width: 0;
+  font-size: clamp(22px, 7vw, 30px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+.doku .game-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: -6px;
+  padding: 6px;
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+}
+.doku .game-home .brand {
+  color: var(--text);
+}
+.doku .game-status-center {
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.doku .game-header .timer {
+  min-height: 28px;
+  padding: 3px 10px;
+  font-size: 13px;
+}
+.doku .game-level {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.doku .game-header-actions {
+  justify-self: end;
+  gap: 8px;
+  margin: 0;
+}
+.doku .game-header .icon-button {
+  width: 38px;
+  height: 38px;
+}
+
+/* Transient status (given square / erase on). Floats over the gap above
+   the controls so showing it never resizes the board. */
+.doku .game-controls {
+  position: relative;
+}
+.doku .game-status {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--grid-line);
+  color: var(--text);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+.doku .game-status:empty {
+  display: none;
+}
+
+/* Value-first setting + its help popover */
+.setting-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.help-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--surface-soft);
+  border: 1px solid var(--grid-line);
+  color: var(--accent);
+}
+.help-popover {
+  width: min(92vw, 420px);
+  max-height: 85dvh;
+  overflow: auto;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid var(--region-line);
+  border-radius: 18px;
+  background: var(--dialog-bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.help-popover::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+.help-popover p {
+  margin: 0 0 10px;
+}
+.help-popover .input-mode-demo {
+  margin: 14px 0;
+}
+.help-popover > .secondary {
+  width: 100%;
+}
+
+/* ==========================================================================
+   Today's puzzles (start hub)
+   ========================================================================== */
+.daily-hub {
+  margin: 20px 0 28px;
+  padding: 18px;
+  border: 1px solid var(--region-line);
+  border-radius: 16px;
+  background: var(--surface-soft);
+}
+.daily-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 14px;
+}
+.daily-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.daily-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.daily-meta .brand {
+  font-size: 18px;
+}
+.daily-levels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.daily-level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 72px;
+  padding: 12px 8px;
+  border: 1px solid var(--grid-line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+}
+.daily-level strong {
+  font-size: 16px;
+  text-transform: capitalize;
+}
+.daily-level small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.daily-level.going {
+  border-color: var(--accent);
+}
+.daily-level.done small {
+  color: var(--accent);
+}
+.daily-consistency {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.section-label.choose-own {
+  margin-top: 8px;
+}
+.setup-page > .secondary.wide {
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+/* ==========================================================================
+   Profile: consistency + badge shelf
+   ========================================================================== */
+.profile-page section {
+  margin-top: 28px;
+}
+.consistency-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.consistency-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--grid-line);
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+.consistency-tile .tile-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.consistency-tile strong {
+  font-size: 28px;
+  line-height: 1;
+}
+.consistency-tile small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.profile-page meter {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--accent);
+}
+.profile-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 14px;
+  color: var(--muted);
+}
+.profile-totals strong {
+  color: var(--text);
+}
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 10px;
+  margin: 12px 0 40px;
+  padding: 0;
+  list-style: none;
+}
+.badge-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--grid-line);
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+.badge-medal {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px dashed var(--grid-line);
+  color: var(--muted);
+}
+.badge-medal img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.badge-card.earned .badge-medal {
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.badge-count {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+}
+.badge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.badge-text small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.badge-card.locked .badge-text strong {
+  color: var(--muted);
+}
+.badge-text .badge-earned {
+  color: var(--accent);
+  font-weight: 600;
+}
+.badge-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.badge-progress meter {
+  flex: 1;
+}
+@media (max-width: 430px) {
+  .consistency-tile {
+    padding: 12px 10px;
+  }
+  .consistency-tile strong {
+    font-size: 22px;
+  }
+}
+
+/* ==========================================================================
+   Account card (profile page)
+   ========================================================================== */
+.account-card {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--region-line);
+  border-radius: 16px;
+  background: var(--surface-soft);
+}
+.account-card h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+.account-form label {
+  font-size: 13px;
+  font-weight: 700;
+}
+.account-form label small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.account-form input {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--grid-line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 16px; /* 16px stops iOS from zooming into the field */
+}
+.account-form > .primary {
+  align-self: flex-start;
+  margin-top: 8px;
+}
+.account-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.account-row input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.handle-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.handle-field span {
+  color: var(--muted);
+  font-weight: 700;
+}
+.handle-field input {
+  flex: 1;
+  min-width: 0;
+}
+.account-alt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.account-sent {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 0 0;
+  color: var(--text);
+}
+.account-sent svg {
+  flex: none;
+  color: var(--accent);
+}
+.account-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.danger-link {
+  margin-top: 16px;
+  color: var(--error);
+}
+.danger-zone {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--error);
+  border-radius: 12px;
+}
+.danger-zone p {
+  margin: 0;
+}
+.doku button.danger {
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--error);
+  color: var(--bg);
+  font-weight: 700;
+}

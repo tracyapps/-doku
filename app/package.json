@@ -16,12 +16,14 @@
     "prebuild": "npm run check:runtime",
     "build": "tsc && vite build && node scripts/prepare-sites-build.mjs",
     "dev:web": "vite --config vite.web.config.ts",
-    "dev:api": "tsx server/index.ts",
+    "dev:api": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning --import tsx server/index.ts",
     "build:web": "tsc && vite build --config vite.web.config.ts",
-    "test:game": "node --import tsx --test tests/engine.test.ts tests/session.test.ts tests/selection.test.ts tests/network.test.ts tests/service.test.ts",
-    "typecheck": "tsc --noEmit && tsc --ignoreConfig --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop --skipLibCheck --types node server/app.ts 'api/[...path].ts'"
+    "test:game": "node --import tsx --test tests/engine.test.ts tests/session.test.ts tests/selection.test.ts tests/network.test.ts tests/service.test.ts tests/progress.test.ts tests/scoring.test.ts tests/accounts.test.ts",
+    "typecheck": "tsc --noEmit && tsc --ignoreConfig --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop --skipLibCheck --types node server/app.ts server/migrate.ts 'api/[...path].ts'",
+    "db:migrate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning --import tsx server/migrate.ts"
   },
   "dependencies": {
+    "@better-auth/passkey": "^1.7.6",
     "@discord/embedded-app-sdk": "^2.5.0",
     "@fontsource/dm-sans": "^5.3.0",
     "@fontsource/outfit": "^5.3.0",
@@ -31,6 +33,7 @@
     "@radix-ui/react-dropdown-menu": "2.1.20",
     "@radix-ui/react-icons": "1.3.2",
     "@use-gesture/react": "10.3.1",
+    "better-auth": "^1.7.6",
     "express": "^5.2.1",
     "motion": "12.42.2",
     "pg": "^8.23.0",

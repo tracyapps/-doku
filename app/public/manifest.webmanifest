@@ -1,0 +1,14 @@
+{
+  "name": "*doku",
+  "short_name": "*doku",
+  "description": "Sudoku, with room to play your way. Classic, colors and jigsaw.",
+  "start_url": "/play/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1928",
+  "theme_color": "#0d1928",
+  "icons": [
+    { "src": "/assets/brand/doku-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

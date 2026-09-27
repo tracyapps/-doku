@@ -164,3 +164,24 @@ html[data-doku-theme="retro"] .bottom-sheet {
   border-radius: 3px;
   box-shadow: 7px 8px 0 #08182b;
 }
+/* Icons on the yellow buttons (header, Undo, Erase) use the dark ink,
+   like the keypad numbers, instead of the light text color. */
+.doku[data-theme="retro"] .icon-button,
+.doku[data-theme="retro"] .labeled-icon:not(.active) > span {
+  color: #182846;
+}
+/* Text on yellow buttons (daily levels, chosen type, level picker) uses the
+   dark ink too — the cream text color disappears on yellow. */
+.doku[data-theme="retro"] .daily-level,
+.doku[data-theme="retro"] .daily-level small,
+.doku[data-theme="retro"] .secondary,
+.doku[data-theme="retro"] .level-options button,
+.doku[data-theme="retro"] .type-option.chosen,
+.doku[data-theme="retro"] .type-option.chosen small {
+  color: #182846;
+}
+.doku[data-theme="retro"] .daily-level {
+  border: 2px solid #fff0bd;
+  border-radius: 4px;
+  box-shadow: 4px 4px 0 #09192c;
+}

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" fill="none">
+  <!-- Un-erased chalk doodles hugging the frame, plus a few eraser smudges.
+       Used as a viewport-fixed, `cover` background layer, so it crops itself
+       out on narrow screens where there is no gutter to hold the doodles. -->
+  <defs>
+    <filter id="bb-smudge" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+
+    <g id="d-grid"><path d="M10 10H90M10 43H90M10 76H90M10 10V90M43 10V90M76 10V90M49 19l14 14M63 19l-14 14M52 55a7 7 0 1 1 14 0a7 7 0 1 1-14 0"/></g>
+    <g id="d-check"><path d="M18 54L40 76L84 24"/></g>
+    <g id="d-bulb"><path d="M50 12a26 26 0 0 1 15 47v7h-30v-7a26 26 0 0 1 15-47zM40 74h20M43 84h14"/></g>
+    <g id="d-spiral"><path d="M52 50q-2-12-14-10q-14 3-10 18q5 20 26 16q26-5 22-32q-5-30-38-26q-36 4-34 40"/></g>
+    <g id="d-crown"><path d="M18 76h64l-6-36-18 14-8-22-8 22-18-14z"/></g>
+    <g id="d-nine"><path d="M66 34a18 18 0 1 1-20 16M62 30 50 86"/></g>
+    <g id="d-star"><path d="M50 12 61 41 92 41 67 59 76 89 50 70 24 89 33 59 8 41 39 41Z"/></g>
+    <g id="d-eye"><path d="M10 50q40-34 80 0q-40 34-80 0zM50 50a10 10 0 1 1 .01 0"/></g>
+    <g id="d-arrow"><path d="M12 62q34 10 70-16M64 32l20 12-16 18"/></g>
+    <g id="d-tally"><path d="M24 20v60M40 16v60M56 22v60M12 40l56 12"/></g>
+    <g id="d-three"><path d="M34 26q26-8 26 10q0 14-20 16q20 2 20 16q0 18-28 10"/></g>
+  </defs>
+
+  <!-- half-erased smudges, left in the corners -->
+  <g filter="url(#bb-smudge)" fill="#ffffff">
+    <ellipse cx="120" cy="130" rx="150" ry="92" opacity="0.05"/>
+    <ellipse cx="90" cy="700" rx="120" ry="140" opacity="0.035"/>
+    <ellipse cx="1332" cy="806" rx="150" ry="86" opacity="0.045"/>
+    <ellipse cx="1368" cy="356" rx="120" ry="150" opacity="0.04"/>
+  </g>
+
+  <!-- each doodle is centred on its own middle before rotating, so placement stays exact -->
+  <g fill="none" stroke="#e9f1e6" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+    <use href="#d-grid"   transform="translate(88 102) rotate(-7) scale(0.95) translate(-50 -50)"  opacity="0.30"/>
+    <use href="#d-check"  transform="translate(92 250) rotate(6) scale(0.56) translate(-50 -50)"   opacity="0.24"/>
+    <use href="#d-bulb"   transform="translate(88 402) rotate(-4) scale(0.78) translate(-50 -50)"  opacity="0.28"/>
+    <use href="#d-spiral" transform="translate(86 548) rotate(11) scale(0.88) translate(-50 -50)"  opacity="0.22"/>
+    <use href="#d-crown"  transform="translate(90 696) rotate(-6) scale(0.84) translate(-50 -50)"  opacity="0.28"/>
+    <use href="#d-nine"   transform="translate(96 826) rotate(8) scale(0.62) translate(-50 -50)"   opacity="0.26"/>
+
+    <use href="#d-star"   transform="translate(1352 150) rotate(9) scale(0.78) translate(-50 -50)"  opacity="0.28"/>
+    <use href="#d-eye"    transform="translate(1352 300) rotate(4) scale(0.90) translate(-50 -50)"  opacity="0.26"/>
+    <use href="#d-arrow"  transform="translate(1352 452) rotate(-8) scale(0.92) translate(-50 -50)" opacity="0.30"/>
+    <use href="#d-tally"  transform="translate(1352 602) rotate(5) scale(0.72) translate(-50 -50)"  opacity="0.26"/>
+    <use href="#d-three"  transform="translate(1352 760) rotate(-5) scale(0.66) translate(-50 -50)" opacity="0.26"/>
+  </g>
+</svg>

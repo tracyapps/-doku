@@ -47,6 +47,13 @@ import {
   ChatCircleDots,
   GithubLogo,
   RocketLaunch,
+  Question,
+  CalendarCheck,
+  Target,
+  Shapes,
+  SunHorizon,
+  Ghost,
+  Medal,
 } from "@phosphor-icons/react";
 import { BottomSheet, MobileScroll, KeyboardInput } from "./mobile";
 import {
@@ -58,6 +65,42 @@ import {
   type Difficulty,
 } from "./game/engine";
 import { selectCell, toggleValue } from "./game/selection";
+import { newId } from "./game/id";
+import {
+  DAILY_LEVELS,
+  dailySeed,
+  dailyVariant,
+  dateKey,
+  parseDailySeed,
+} from "./game/daily";
+import { addRecord, recordFromSession, type PlayRecord } from "./game/records";
+import { consistency } from "./game/consistency";
+import {
+  addPasskey,
+  deleteAccount,
+  downloadMyData,
+  getAccountConfig,
+  getMe,
+  passkeysSupported,
+  sendMagicLink,
+  signInWithPasskey,
+  signInWithProvider,
+  signOut,
+  syncRecords,
+  updateProfile,
+  type AccountConfig,
+  type Profile,
+} from "./game/account";
+import {
+  ACHIEVEMENTS,
+  byId,
+  evaluate,
+  unseen,
+  type AchievementDef,
+  type Award,
+  type Category,
+  type Progress,
+} from "./game/achievements";
 import {
   autofill,
   enter,
@@ -97,6 +140,7 @@ type Screen =
   | "setup"
   | "game"
   | "history"
+  | "profile"
   | "results"
   | "how"
   | "friends"
@@ -222,6 +266,9 @@ const colors = [
 ];
 const ACTIVE = "doku.active.v1",
   HISTORY = "doku.history.v1",
+  RECORDS = "doku.records.v1", // PlayRecord[] — permanent game summaries
+  PARKED = "doku.parked.v1", // unfinished games set aside (today's dailies, free play)
+  SEEN_AWARDS = "doku.awards.seen.v1",
   SETTINGS = "doku.settings.v1";
 const DISCORD_APP_ID = "1548073007950602303";
 const PUBLIC_PATHS: Partial<Record<Screen, string>> = {
@@ -229,6 +276,7 @@ const PUBLIC_PATHS: Partial<Record<Screen, string>> = {
   setup: "/play/",
   game: "/play/",
   history: "/history/",
+  profile: "/profile/",
   how: "/how/",
   roadmap: "/roadmap/",
   privacy: "/privacy/",
@@ -424,6 +472,77 @@ function Toggle({
         <span />
       </button>
     </label>
+  );
+}
+const categoryIcons: Record<Category, typeof Trophy> = {
+  milestone: Trophy,
+  habit: CalendarCheck,
+  skill: Target,
+  variety: Shapes,
+  time: SunHorizon,
+  return: Ghost,
+};
+const shortDate = (iso: string) =>
+  new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+/** One badge on the profile shelf. Placeholder medal until real art lands
+    (set `art` on the achievement definition). */
+function BadgeCard({
+  def,
+  awards,
+  progress,
+}: {
+  def: AchievementDef;
+  awards: Award[];
+  progress?: Progress;
+}) {
+  const earned = awards.length > 0;
+  const secret = !!def.hidden && !earned;
+  const Icon = categoryIcons[def.category] ?? Medal;
+  return (
+    <li
+      className={`badge-card ${earned ? "earned" : "locked"}`}
+      data-category={def.category}
+    >
+      <span className="badge-medal" aria-hidden="true">
+        {earned && def.art ? (
+          <img src={def.art} alt="" />
+        ) : secret ? (
+          <Question size={28} weight="bold" />
+        ) : (
+          <Icon size={28} weight={earned ? "fill" : "regular"} />
+        )}
+        {awards.length > 1 && <b className="badge-count">×{awards.length}</b>}
+      </span>
+      <span className="badge-text">
+        <strong>{secret ? "A secret badge" : def.name}</strong>
+        <small>
+          {secret ? "Keep playing to discover this one." : def.description}
+        </small>
+        {earned ? (
+          <small className="badge-earned">
+            Earned {shortDate(awards[awards.length - 1].earnedAt)}
+            {awards.length > 1 ? ` · ${awards.length} times` : ""}
+          </small>
+        ) : progress && !secret ? (
+          <span className="badge-progress">
+            <meter
+              min={0}
+              max={progress.target}
+              value={progress.current}
+              aria-label={`${def.name} progress`}
+            />
+            <small>
+              {progress.current} of {progress.target}
+            </small>
+          </span>
+        ) : null}
+        <span className="sr-only">{earned ? "Earned." : "Not earned yet."}</span>
+      </span>
+    </li>
   );
 }
 function InputModeDemo() {
@@ -679,6 +798,54 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
   const [history, setHistory] = useState<Session[]>(() =>
     readSaved(HISTORY, []),
   );
+  // Permanent summaries of finished games. First run builds them from history.
+  const [records, setRecords] = useState<PlayRecord[]>(() => {
+    const saved = readSaved<PlayRecord[] | null>(RECORDS, null);
+    if (saved) return saved;
+    return readSaved<Session[]>(HISTORY, []).reduce<PlayRecord[]>(
+      (list, s) => {
+        const r = recordFromSession(s);
+        return r ? addRecord(list, r) : list;
+      },
+      [],
+    );
+  });
+  // Unfinished games set aside so a daily and free play can both be in progress.
+  // Keyed by the daily seed, or "free". Yesterday's unfinished dailies drop off.
+  const [parked, setParked] = useState<Record<string, Session>>(() => {
+    const saved = readSaved<Record<string, Session>>(PARKED, {});
+    const now = dateKey();
+    return Object.fromEntries(
+      Object.entries(saved).filter(([slot]) => {
+        const d = parseDailySeed(slot);
+        return !d || d.date === now;
+      }),
+    );
+  });
+  const [seenAwards, setSeenAwards] = useState<string[] | null>(() =>
+    readSaved<string[] | null>(SEEN_AWARDS, null),
+  );
+  const [today, setToday] = useState(dateKey);
+  const awards = useMemo(
+    () => evaluate({ records, today }),
+    [records, today],
+  );
+  // Optional account. null = guest (or accounts not set up on this server).
+  const [accountConfig, setAccountConfig] = useState<AccountConfig | null>(
+    null,
+  );
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [accountBusy, setAccountBusy] = useState(false);
+  const [accountNote, setAccountNote] = useState(() =>
+    new URLSearchParams(location.search).get("signin") === "error"
+      ? "That sign-in link didn’t work. It may have expired — try sending a new one."
+      : "",
+  );
+  const [signinEmail, setSigninEmail] = useState("");
+  const [linkSentTo, setLinkSentTo] = useState("");
+  const [profileDraft, setProfileDraft] = useState({ name: "", handle: "" });
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const syncedIds = useRef(new Set<string>());
   const [screen, setScreen] = useState<Screen>(() => {
     const params = new URLSearchParams(location.search),
       page = params.get("page");
@@ -690,6 +857,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     if (path === "/roadmap/") return "roadmap";
     if (path === "/styleguide/") return "styleguide";
     if (path === "/history/") return "history";
+    if (path === "/profile/") return "profile";
     if (path === "/play/")
       return session && !session.completedAt ? "game" : "setup";
     return page === "privacy" ||
@@ -769,6 +937,92 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
   useEffect(() => {
     if (!save(HISTORY, history)) setStorageError(true);
   }, [history]);
+  useEffect(() => {
+    if (!save(RECORDS, records)) setStorageError(true);
+  }, [records]);
+  useEffect(() => {
+    if (!save(PARKED, parked)) setStorageError(true);
+  }, [parked]);
+  useEffect(() => {
+    if (seenAwards) save(SEEN_AWARDS, seenAwards);
+  }, [seenAwards]);
+  // Keep "today" current when the app comes back after midnight.
+  useEffect(() => {
+    const refresh = () => setToday(dateKey());
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
+  // Announce newly earned badges. On first run, everything already earned
+  // (from older history) is marked seen quietly instead of flooding toasts.
+  useEffect(() => {
+    if (seenAwards === null) {
+      setSeenAwards(awards.map((a) => a.key));
+      return;
+    }
+    const fresh = unseen(awards, seenAwards);
+    if (!fresh.length) return;
+    const names = [...new Set(fresh.map((a) => byId(a.id)?.name ?? a.id))];
+    const message = `New badge: ${names.join(", ")}.`;
+    setToast((t) => (t.includes(message) ? t : `${t ? `${t} ` : ""}${message}`));
+    setSeenAwards([...seenAwards, ...fresh.map((a) => a.key)]);
+  }, [awards]);
+  // Accounts: find out if sign-in is available, and who (if anyone) is here.
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const config = await getAccountConfig();
+      if (!live) return;
+      setAccountConfig(config);
+      if (!config.enabled) return;
+      const me = await getMe().catch(() => null);
+      if (live && me) setProfile(me);
+    })();
+    return () => {
+      live = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (profile)
+      setProfileDraft({ name: profile.name || "", handle: profile.handle || "" });
+  }, [profile?.id]);
+  // Sync: whenever signed in and there are records the server hasn't seen,
+  // send them and merge back anything from other devices.
+  useEffect(() => {
+    if (!profile) return;
+    const unsent = records.filter((r) => !syncedIds.current.has(r.id));
+    if (!unsent.length && syncedIds.current.size) return;
+    let live = true;
+    syncRecords(unsent)
+      .then(({ records: all }) => {
+        if (!live) return;
+        all.forEach((r) => syncedIds.current.add(r.id));
+        setRecords((local) => all.reduce(addRecord, local));
+      })
+      .catch(() => undefined); // offline is fine; it retries next change
+    return () => {
+      live = false;
+    };
+  }, [profile?.id, records]);
+  const accountAction = async (fn: () => Promise<void>) => {
+    setAccountBusy(true);
+    setAccountNote("");
+    try {
+      await fn();
+    } catch (e) {
+      setAccountNote(
+        e instanceof Error ? e.message : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setAccountBusy(false);
+    }
+  };
+  const refreshProfile = async () => setProfile(await getMe());
+  // Text inputs: the phone-frame preview needs its simulated-keyboard input.
+  const Field = (preview ? KeyboardInput : "input") as "input";
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(""), 4500);
@@ -867,6 +1121,8 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     setHistory((h) =>
       h.some((s) => s.id === finished.id) ? h : [finished, ...h],
     );
+    const record = recordFromSession(finished);
+    if (record) setRecords((r) => addRecord(r, record));
     notify("Beautifully done. Your puzzle is complete.");
   }, [session]);
   const setPreference = <K extends keyof Settings>(
@@ -885,12 +1141,88 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           : s,
       );
   };
-  const start = async (seed?: string) => {
+  /** Show a session on the game screen with fresh per-game UI state. */
+  const openSession = (next: Session) => {
+    setSession(next);
+    setSelected(null);
+    setActive(null);
+    setEraseActive(false);
+    setNotes(false);
+    setHideNotes(false);
+    setChecked([]);
+    setTimerShown(settings.timer);
+    setScreen("game");
+    setSheet(null);
+    setConfirm(null);
+    setShareUrl("");
+    celebrationSeen.current = new Set(
+      completedUnits(next.values, next.puzzle.regions).map((u) =>
+        u.join(","),
+      ),
+    );
+    valueCelebrationSeen.current = new Set(
+      completedValues(next.values, next.puzzle.regions),
+    );
+  };
+  /** Set an unfinished game aside (a daily by its seed, anything else as "free"). */
+  const park = (s: Session | null) => {
+    if (!s || s.completedAt) return;
+    const slot = parseDailySeed(s.puzzle.seed) ? s.puzzle.seed : "free";
+    setParked((p) => ({ ...p, [slot]: s }));
+  };
+  const unpark = (slot: string) =>
+    setParked((p) => {
+      const rest = { ...p };
+      delete rest[slot];
+      return rest;
+    });
+  const isDaily = (s: Session | null) => !!s && !!parseDailySeed(s.puzzle.seed);
+  const freeInProgress =
+    session && !session.completedAt && !isDaily(session)
+      ? session
+      : (parked.free ?? null);
+  const openDaily = (level: Difficulty) => {
+    const seed = dailySeed(today, level);
+    if (session?.puzzle.seed === seed && !session.completedAt) return go("game");
+    const done = history.find((s) => s.puzzle.seed === seed);
+    if (done) {
+      setResult(done);
+      return go("results");
+    }
+    park(session);
+    const waiting = parked[seed];
+    if (waiting) {
+      unpark(seed);
+      openSession(waiting);
+      return;
+    }
+    void start({ seed, variant: dailyVariant(today), difficulty: level });
+  };
+  const resumeFree = () => {
+    if (!freeInProgress) return;
+    if (freeInProgress === session) return go("game");
+    park(session);
+    unpark("free");
+    openSession(freeInProgress);
+  };
+  /** "Let's play": starting a new free game replaces only a free game. */
+  const startFree = () => {
+    if (freeInProgress && !challengeId) return setConfirm("new");
+    if (isDaily(session)) park(session);
+    void start();
+  };
+  const start = async (
+    opts: { seed?: string; variant?: Variant; difficulty?: Difficulty } = {},
+  ) => {
     setBusy(true);
     try {
       await new Promise((r) => setTimeout(r, 20));
-      const family = seed || challengeData?.seed || crypto.randomUUID();
-      const puzzle = createPuzzle(family, variant, difficulty);
+      const family = opts.seed || challengeData?.seed || newId();
+      const puzzle = createPuzzle(
+        family,
+        opts.variant ?? variant,
+        opts.difficulty ?? difficulty,
+      );
       let next = newSession(puzzle);
       if (challengeId) {
         if (!challengeData)
@@ -915,26 +1247,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
         next.events.push({ kind: "autocheck", enabled: true });
       if (settings.conflicts)
         next.events.push({ kind: "conflicts", enabled: true });
-      setSession(next);
-      setSelected(null);
-      setActive(null);
-      setEraseActive(false);
-      setNotes(false);
-      setHideNotes(false);
-      setChecked([]);
-      setTimerShown(settings.timer);
-      setScreen("game");
-      setSheet(null);
-      setConfirm(null);
-      setShareUrl("");
-      celebrationSeen.current = new Set(
-        completedUnits(next.values, next.puzzle.regions).map((u) =>
-          u.join(","),
-        ),
-      );
-      valueCelebrationSeen.current = new Set(
-        completedValues(next.values, next.puzzle.regions),
-      );
+      openSession(next);
     } catch (e) {
       notify(e instanceof Error ? e.message : "Could not start the puzzle.");
     } finally {
@@ -1550,6 +1863,14 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               </span>
               <ArrowRight />
             </button>
+            <button onClick={() => go("profile")}>
+              <Medal size={26} />
+              <span>
+                <strong>Profile & badges</strong>
+                <small>How often you play, and what you’ve earned.</small>
+              </span>
+              <ArrowRight />
+            </button>
             <button onClick={() => openHow("home")}>
               <Lightbulb size={26} />
               <span>
@@ -1795,8 +2116,79 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           <p className="muted">
             {challengeId
               ? "Choose your own level. It will appear beside your result."
-              : "Choose a puzzle and a level before you begin."}
+              : "Play today’s puzzles, or choose your own."}
           </p>
+          {!challengeId && (
+            <section className="daily-hub" aria-labelledby="daily-title">
+              <div className="daily-head">
+                <h2 id="daily-title">Today’s puzzles</h2>
+                <span className="daily-meta">
+                  <Brand variant={dailyVariant(today)} />
+                  <span>
+                    {new Date(`${today}T12:00:00`).toLocaleDateString(
+                      undefined,
+                      { weekday: "long", month: "long", day: "numeric" },
+                    )}
+                  </span>
+                </span>
+              </div>
+              <div className="daily-levels">
+                {DAILY_LEVELS.map((level) => {
+                  const seed = dailySeed(today, level);
+                  const done = history.find((s) => s.puzzle.seed === seed);
+                  const going =
+                    (session?.puzzle.seed === seed && !session.completedAt) ||
+                    !!parked[seed];
+                  return (
+                    <button
+                      key={level}
+                      className={`daily-level ${done ? "done" : going ? "going" : ""}`}
+                      disabled={busy}
+                      onClick={() => openDaily(level)}
+                    >
+                      <strong>{level}</strong>
+                      <small>
+                        {done ? (
+                          <>
+                            <CheckCircle size={15} weight="fill" />{" "}
+                            {formatTime(done.seconds)}
+                          </>
+                        ) : going ? (
+                          "Keep going"
+                        ) : (
+                          "Play"
+                        )}
+                      </small>
+                    </button>
+                  );
+                })}
+              </div>
+              {(() => {
+                const month = consistency(records, "month", today);
+                return (
+                  <p className="daily-consistency">
+                    Played {month.played} of {month.elapsed}{" "}
+                    {month.elapsed === 1 ? "day" : "days"} this month.{" "}
+                    <button
+                      className="text-button"
+                      onClick={() => go("profile")}
+                    >
+                      Profile & badges
+                    </button>
+                  </p>
+                );
+              })()}
+            </section>
+          )}
+          {!challengeId && (
+            <h2 className="section-label choose-own">Or choose your own</h2>
+          )}
+          {!challengeId && freeInProgress && (
+            <button className="secondary wide" onClick={resumeFree}>
+              <Play size={20} /> Resume your{" "}
+              {labels[freeInProgress.puzzle.variant]}
+            </button>
+          )}
           <div className="type-options" role="group" aria-label="Puzzle type">
             {types.map(([v, title, desc, Icon]) => (
               <button
@@ -1851,9 +2243,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           <button
             className="primary wide"
             disabled={busy || (!!challengeId && !challengeData)}
-            onClick={() =>
-              session && !session.completedAt ? setConfirm("new") : start()
-            }
+            onClick={startFree}
           >
             {busy ? "Preparing your puzzle…" : "Let’s play"}{" "}
             <ArrowRight size={22} />
@@ -1866,62 +2256,51 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       {screen === "game" && session && (
         <main className="game-page" data-variant={session.puzzle.variant}>
           <header className="game-header">
-            <button
-              className="game-menu-link"
-              onClick={() => {
-                clearSelection();
-                go("home");
-              }}
-            >
-              <CaretLeft size={16} /> Back to menu
-            </button>
-            <div className="game-heading">
-              <h1>
+            <h1 className="game-title">
+              <button
+                className="game-home"
+                onClick={() => {
+                  clearSelection();
+                  go("home");
+                }}
+              >
+                <CaretLeft size={18} weight="bold" aria-hidden="true" />
                 <Brand variant={session.puzzle.variant} />
-              </h1>
+                <span className="sr-only">, back to menu</span>
+              </button>
+            </h1>
+            <div className="game-status-center">
+              <button
+                className="timer"
+                aria-label={timerShown ? "Hide timer" : "Show timer"}
+                onClick={() => setTimerShown((v) => !v)}
+              >
+                <Timer size={15} />
+                {timerShown ? (
+                  <span>{formatTime(session.seconds)}</span>
+                ) : (
+                  <span className="sr-only">Show time</span>
+                )}
+              </button>
+              <small className="game-level">
+                {session.puzzle.difficulty}
+              </small>
             </div>
-            <div className="game-meta">
-              <div className="game-context">
-                <span>
-                  {session.puzzle.variant === "jigsaw"
-                    ? "Jigsaw"
-                    : session.puzzle.variant === "hue"
-                      ? "Colors"
-                      : "Classic"}{" "}
-                  ·{" "}
-                  <span className="capitalize">
-                    {session.puzzle.difficulty}
-                  </span>
-                </span>
-                <button
-                  className="timer"
-                  aria-label={timerShown ? "Hide timer" : "Show timer"}
-                  onClick={() => setTimerShown((v) => !v)}
-                >
-                  <Timer size={16} />
-                  {timerShown ? (
-                    <span>{formatTime(session.seconds)}</span>
-                  ) : (
-                    <span className="sr-only">Show time</span>
-                  )}
-                </button>
-              </div>
-              <div className="game-header-actions">
-                <button
-                  className="icon-button"
-                  aria-label="Settings"
-                  onClick={() => setSheet("settings")}
-                >
-                  <Gear size={26} weight="bold" />
-                </button>
-                <button
-                  className="icon-button"
-                  aria-label="More options"
-                  onClick={() => setSheet("more")}
-                >
-                  <DotsThree size={30} weight="bold" />
-                </button>
-              </div>
+            <div className="game-header-actions">
+              <button
+                className="icon-button"
+                aria-label="Settings"
+                onClick={() => setSheet("settings")}
+              >
+                <Gear size={22} weight="bold" />
+              </button>
+              <button
+                className="icon-button"
+                aria-label="More options"
+                onClick={() => setSheet("more")}
+              >
+                <DotsThree size={26} weight="bold" />
+              </button>
             </div>
           </header>
           <div className="play-layout">
@@ -2150,52 +2529,17 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                   );
                 })}
               </div>
-              <div className="input-mode-row">
-                <label className="input-order">
-                  <select
-                    aria-label="Input order"
-                    value={settings.input}
-                    onChange={(e) => {
-                      setPreference(
-                        "input",
-                        e.target.value as Settings["input"],
-                      );
-                      clearSelection();
-                    }}
-                  >
-                    <option value="cell">Cell first</option>
-                    <option value="value">Value first</option>
-                  </select>
-                  <CaretDown size={18} />
-                </label>
-                <p
-                  className={`input-helper ${selectedGiven ? "locked-helper" : ""}`}
-                >
-                  <span>
-                    {selectedGiven ? (
-                      <>
-                        <Lock size={15} weight="fill" /> This is a given square.
-                        Choose another square to make changes.
-                      </>
-                    ) : eraseActive ? (
-                      `Erase is active. Tap a square to clear its ${notes ? "notes" : "number"}.`
-                    ) : settings.input === "cell" ? (
-                      "Choose a square, then a " +
-                      (session.puzzle.variant === "hue" ? "color." : "number.")
-                    ) : (
-                      "Choose a " +
-                      (session.puzzle.variant === "hue" ? "color" : "number") +
-                      ", then tap squares."
-                    )}
-                  </span>
-                  <button
-                    className="input-help-link"
-                    onClick={() => openHow("game")}
-                  >
-                    See how it works <ArrowRight size={14} />
-                  </button>
-                </p>
-              </div>
+              {/* Mode picker moved to Settings. Only transient status
+                  messages show here, floating so the board never resizes. */}
+              <p className="game-status" role="status">
+                {selectedGiven ? (
+                  <>
+                    <Lock size={14} weight="fill" /> This is a given square.
+                  </>
+                ) : eraseActive ? (
+                  `Erase is on. Tap a square to clear its ${notes ? "notes" : "number"}.`
+                ) : null}
+              </p>
               {hideNotes && (
                 <button
                   className="text-button"
@@ -2217,6 +2561,317 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               )}
             </div>
           </div>
+        </main>
+      )}
+      {screen === "profile" && (
+        <main className="page profile-page">
+          <Back />
+          <p className="eyebrow">YOUR PUZZLING, YOUR WAY</p>
+          <h1 className="page-title">
+            {profile?.name || playerName || "Your profile"}
+          </h1>
+          {accountConfig?.enabled && (
+            <section className="account-card" aria-labelledby="account-title">
+              {!profile ? (
+                <>
+                  <h2 id="account-title">Keep your progress everywhere</h2>
+                  <p className="muted">
+                    Sign in to save your puzzles and badges across devices and
+                    play with friends. Playing as a guest always works — no
+                    account needed.
+                  </p>
+                  {linkSentTo ? (
+                    <p className="account-sent" role="status">
+                      <CheckCircle size={20} weight="fill" /> Check{" "}
+                      <strong>{linkSentTo}</strong> for a sign-in link. It works
+                      once and expires in 15 minutes.
+                    </p>
+                  ) : (
+                    <form
+                      className="account-form"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const email = signinEmail.trim();
+                        void accountAction(async () => {
+                          await sendMagicLink(email);
+                          setLinkSentTo(email);
+                        });
+                      }}
+                    >
+                      <label htmlFor="signin-email">Email</label>
+                      <div className="account-row">
+                        <Field
+                          id="signin-email"
+                          type="email"
+                          autoComplete="email webauthn"
+                          required
+                          value={signinEmail}
+                          onChange={(e) => setSigninEmail(e.target.value)}
+                        />
+                        <button
+                          className="primary"
+                          type="submit"
+                          disabled={accountBusy}
+                        >
+                          Email me a link
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                  <div className="account-alt">
+                    {passkeysSupported() && (
+                      <button
+                        className="secondary"
+                        disabled={accountBusy}
+                        onClick={() =>
+                          accountAction(async () => {
+                            await signInWithPasskey();
+                            await refreshProfile();
+                          })
+                        }
+                      >
+                        Sign in with a passkey
+                      </button>
+                    )}
+                    {accountConfig.providers.discord && (
+                      <button
+                        className="secondary"
+                        disabled={accountBusy}
+                        onClick={() =>
+                          accountAction(() => signInWithProvider("discord"))
+                        }
+                      >
+                        Continue with Discord
+                      </button>
+                    )}
+                    {accountConfig.providers.apple && (
+                      <button
+                        className="secondary"
+                        disabled={accountBusy}
+                        onClick={() =>
+                          accountAction(() => signInWithProvider("apple"))
+                        }
+                      >
+                        Continue with Apple
+                      </button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 id="account-title">Your account</h2>
+                  <p className="muted">
+                    Signed in as <strong>{profile.email}</strong>. Your puzzles
+                    and badges are saved to your account.
+                  </p>
+                  <form
+                    className="account-form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void accountAction(async () => {
+                        setProfile(
+                          await updateProfile({
+                            name: profileDraft.name,
+                            handle: profileDraft.handle || null,
+                          }),
+                        );
+                        setAccountNote("Saved.");
+                      });
+                    }}
+                  >
+                    <label htmlFor="profile-name">Display name</label>
+                    <Field
+                      id="profile-name"
+                      maxLength={40}
+                      required
+                      value={profileDraft.name}
+                      onChange={(e) =>
+                        setProfileDraft((d) => ({ ...d, name: e.target.value }))
+                      }
+                    />
+                    <label htmlFor="profile-handle">
+                      Handle <small>(for friends to find you)</small>
+                    </label>
+                    <div className="handle-field">
+                      <span aria-hidden="true">@</span>
+                      <Field
+                        id="profile-handle"
+                        maxLength={20}
+                        pattern="[a-z0-9_]{3,20}"
+                        aria-describedby="handle-help"
+                        value={profileDraft.handle}
+                        onChange={(e) =>
+                          setProfileDraft((d) => ({
+                            ...d,
+                            handle: e.target.value.toLowerCase(),
+                          }))
+                        }
+                      />
+                    </div>
+                    <small id="handle-help" className="muted">
+                      3–20 lowercase letters, numbers, or underscores.
+                    </small>
+                    <button
+                      className="primary"
+                      type="submit"
+                      disabled={accountBusy}
+                    >
+                      Save profile
+                    </button>
+                  </form>
+                  <div className="account-alt">
+                    {passkeysSupported() && (
+                      <button
+                        className="secondary"
+                        disabled={accountBusy}
+                        onClick={() =>
+                          accountAction(async () => {
+                            await addPasskey();
+                            setAccountNote(
+                              "Passkey added. Next time, sign in with one tap.",
+                            );
+                          })
+                        }
+                      >
+                        Add a passkey
+                      </button>
+                    )}
+                    <button
+                      className="secondary"
+                      disabled={accountBusy}
+                      onClick={() => accountAction(downloadMyData)}
+                    >
+                      Download my data
+                    </button>
+                    <button
+                      className="secondary"
+                      disabled={accountBusy}
+                      onClick={() =>
+                        accountAction(async () => {
+                          await signOut();
+                          setProfile(null);
+                          syncedIds.current.clear();
+                          setLinkSentTo("");
+                        })
+                      }
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                  {!confirmDelete ? (
+                    <button
+                      className="text-button danger-link"
+                      onClick={() => setConfirmDelete(true)}
+                    >
+                      Delete my account
+                    </button>
+                  ) : (
+                    <div className="danger-zone" role="group" aria-label="Delete account">
+                      <p>
+                        This permanently deletes your account, synced puzzles,
+                        and badges from our server. Puzzles saved on this device
+                        stay here.
+                      </p>
+                      <div className="account-alt">
+                        <button
+                          className="danger"
+                          disabled={accountBusy}
+                          onClick={() =>
+                            accountAction(async () => {
+                              await deleteAccount();
+                              setProfile(null);
+                              setConfirmDelete(false);
+                              syncedIds.current.clear();
+                              setAccountNote("Your account has been deleted.");
+                            })
+                          }
+                        >
+                          Delete forever
+                        </button>
+                        <button
+                          className="secondary"
+                          onClick={() => setConfirmDelete(false)}
+                        >
+                          Keep my account
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              {accountNote && (
+                <p className="account-note" role="status">
+                  {accountNote}
+                </p>
+              )}
+            </section>
+          )}
+          <section aria-labelledby="often-title">
+            <h2 id="often-title" className="section-label">
+              How often you play
+            </h2>
+            <p className="muted">
+              Days you finished a daily puzzle. A missed day never resets
+              anything.
+            </p>
+            <div className="consistency-grid">
+              {(["week", "month", "year"] as const).map((period) => {
+                const c = consistency(records, period, today);
+                return (
+                  <div key={period} className="consistency-tile">
+                    <span className="tile-label">This {period}</span>
+                    <strong>{c.percent}%</strong>
+                    <meter
+                      min={0}
+                      max={c.elapsed}
+                      value={c.played}
+                      aria-label={`This ${period}: ${c.played} of ${c.elapsed} days`}
+                    />
+                    <small>
+                      {c.played} of {c.elapsed}{" "}
+                      {c.elapsed === 1 ? "day" : "days"}
+                    </small>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="profile-totals">
+              <span>
+                <strong>{records.length}</strong> puzzles finished
+              </span>
+              <span>
+                <strong>
+                  {records.filter((r) => r.kind === "daily").length}
+                </strong>{" "}
+                daily puzzles
+              </span>
+            </p>
+          </section>
+          <section aria-labelledby="badges-title">
+            <h2 id="badges-title" className="section-label">
+              Badges
+            </h2>
+            <p className="muted">
+              {new Set(awards.map((a) => a.id)).size} of {ACHIEVEMENTS.length}{" "}
+              earned
+            </p>
+            <ul className="badge-grid">
+              {[...ACHIEVEMENTS]
+                .sort(
+                  (a, b) =>
+                    Number(awards.some((x) => x.id === b.id)) -
+                    Number(awards.some((x) => x.id === a.id)),
+                )
+                .map((def) => (
+                  <BadgeCard
+                    key={def.id}
+                    def={def}
+                    awards={awards.filter((a) => a.id === def.id)}
+                    progress={def.progress?.({ records, today })}
+                  />
+                ))}
+            </ul>
+          </section>
         </main>
       )}
       {screen === "history" && (
@@ -2905,6 +3560,66 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           </select>
         </label>
         <h3>Gameplay</h3>
+        <div className="setting-row input-order-setting">
+          <span>
+            <span className="setting-label">
+              Value first
+              <button
+                type="button"
+                className="help-button"
+                popoverTarget="input-order-help"
+                aria-label="What do cell first and value first mean?"
+              >
+                <Question size={16} weight="bold" />
+              </button>
+            </span>
+            <small>
+              {settings.input === "value"
+                ? "Choose a value, then tap squares."
+                : "Off: choose a square, then a value."}
+            </small>
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={settings.input === "value"}
+            aria-label="Value first"
+            onClick={() => {
+              setPreference(
+                "input",
+                settings.input === "value" ? "cell" : "value",
+              );
+              clearSelection();
+            }}
+            className={`switch ${settings.input === "value" ? "on" : ""}`}
+          >
+            <span />
+          </button>
+          <div
+            id="input-order-help"
+            popover="auto"
+            role="dialog"
+            className="help-popover"
+            aria-label="Cell first and value first"
+          >
+            <p>
+              <strong>Cell first</strong> (off): tap a square, then a value.
+            </p>
+            <p>
+              <strong>Value first</strong> (on): tap a value, then tap as many
+              squares as you like. Tap the value again to put it down.
+            </p>
+            <InputModeDemo />
+            <button
+              type="button"
+              className="secondary"
+              popoverTarget="input-order-help"
+              popoverTargetAction="hide"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
         <Toggle
           label="Show timer by default"
           description="For new games. Tap the current timer anytime."
@@ -3008,6 +3723,9 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           <button onClick={() => go("history")}>
             <ClockCounterClockwise /> Puzzle history
           </button>
+          <button onClick={() => go("profile")}>
+            <Medal /> Profile & badges
+          </button>
           <button onClick={() => openHow("game")}>
             <Lightbulb /> How to play
           </button>
@@ -3063,7 +3781,11 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                 if (selected !== null)
                   setSession((s) => (s ? reveal(s, selected) : s));
                 setConfirm(null);
-              } else if (confirm === "new") start();
+              } else if (confirm === "new") {
+                unpark("free");
+                if (isDaily(session)) park(session);
+                void start();
+              }
               else {
                 if (session) {
                   setVariant(session.puzzle.variant);

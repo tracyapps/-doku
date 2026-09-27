@@ -20,3 +20,14 @@ Launch scope: keep the default Discord-managed Entry Point handler for the initi
 Live group cards are a separate guild-bot phase. Store `guildId`, `channelId`, `messageId`, and `challengeId` when the bot creates the card, then edit that known message when a result arrives. The minimum proposed channel permissions are View Channel, Send Messages, Embed Links, and Attach Files. Do not request Read Message History merely to rediscover the bot's own card. Server administrators can restrict those permissions to chosen game channels.
 
 Operational limits: JSON body limit 256 KB, 10,000 actions, 40-character names, 100-character seeds, and a basic per-process request rate limit. This rate limit is not global in serverless deployments. There is no automatic record retention policy yet. Add identity, shared rate limiting, normalized persistence and a retention policy before broad public promotion.
+
+## Accounts (Sep 2026)
+
+Optional. Guest play and browser-local saves never require an account.
+
+- **Library:** Better Auth (`server/auth.ts`), mounted at `/api/auth/*` before JSON parsing. Sign-in by email magic link (creates the account), passkeys (added from the profile after first sign-in), and Discord / Sign in with Apple when their keys are set. No passwords.
+- **Storage:** Postgres via `DATABASE_URL` (required on Vercel); otherwise local SQLite at `.data/auth.sqlite`. `npm run db:migrate` creates all tables: Better Auth's (`user`, `session`, `account`, `verification`, `passkey`) plus *doku's `playRecord` and extra user columns (`handle`, `featuredBadges`, `publicProfile`), declared as a Better Auth plugin schema so one migration covers both databases.
+- **Endpoints** (`server/account.ts`, session required except config): `GET /api/account/config`, `GET /api/me`, `PUT /api/me/profile`, `POST /api/me/records` (sync: send records, get the merged list back; dedupes by id; validates shape and that daily seeds match their date/level), `GET /api/me/records`, `GET /api/me/export` (all your data as JSON), `DELETE /api/me` (deletes the account and everything tied to it).
+- **Sessions:** cookie on the web; the `bearer` plugin also returns a token (`set-auth-token`), stored by the client for the Discord Activity and the native app, where cookies are unreliable.
+- **Records are self-reported.** Same caveat as challenges: friendly comparison, not anti-cheat.
+- If accounts fail to load (e.g. no database on a deployment), `/api/account/config` returns `{enabled:false}` and the UI hides sign-in; the game keeps working.

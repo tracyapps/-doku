@@ -2,6 +2,7 @@ import express from "express";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createStore } from "./store.js";
 import { createPuzzle } from "../src/game/engine.js";
+import { toNodeHandler } from "better-auth/node";
 const hash = (token: string) =>
   createHash("sha256").update(token).digest("hex");
 const fail = (message: string, status = 400): never => {
@@ -9,10 +10,19 @@ const fail = (message: string, status = 400): never => {
 };
 const variants = ["classic", "hue", "jigsaw"];
 const difficulties = ["easy", "medium", "hard"];
+async function loadAccounts() {
+  try {
+    const { auth } = await import("./auth.js");
+    const { accountRouter } = await import("./account.js");
+    return { handler: toNodeHandler(auth), router: accountRouter() };
+  } catch (error) {
+    console.warn("Accounts disabled:", (error as Error).message);
+    return null;
+  }
+}
 export function makeApp(store = createStore()) {
   const app = express();
   app.disable("x-powered-by");
-  app.use(express.json({ limit: "256kb" }));
   app.use("/api", (_req, res, next) => {
     res.set("Cache-Control", "no-store");
     next();
@@ -34,6 +44,33 @@ export function makeApp(store = createStore()) {
       return;
     }
     next();
+  });
+  // Accounts are optional and load lazily, so a missing DATABASE_URL on a
+  // deployment only disables sign-in instead of taking the game offline.
+  const accounts = loadAccounts();
+  app.all("/api/auth/*splat", async (req, res, next) => {
+    try {
+      const a = await accounts;
+      if (!a) fail("Accounts aren't set up on this server yet.", 503);
+      a!.handler(req, res);
+    } catch (e) {
+      next(e);
+    }
+  });
+  // Better Auth reads the raw body itself, so JSON parsing starts after it.
+  const smallJson = express.json({ limit: "256kb" }),
+    syncJson = express.json({ limit: "4mb" }); // record sync can be large once
+  app.use((req, res, next) =>
+    (req.path === "/api/me/records" ? syncJson : smallJson)(req, res, next),
+  );
+  app.use("/api", async (req, res, next) => {
+    if (!req.path.startsWith("/me") && req.path !== "/account/config") return next();
+    const a = await accounts;
+    if (!a) {
+      if (req.path === "/account/config") return void res.json({ enabled: false, providers: {} });
+      return void res.status(503).json({ error: "Accounts aren't set up on this server yet." });
+    }
+    a.router(req, res, next);
   });
   app.get("/api/health", (_req, res) => {
     if (process.env.VERCEL && store.mode === "local-file") {

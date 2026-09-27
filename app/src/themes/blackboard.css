@@ -1,218 +1,255 @@
-/* blackboard — notebook-paper texture, hand-drawn borders, ink-blue accents. */
+/* blackboard
+ * The 9x9 grid is drawn inline by Prototype.tsx from `--grid-line` (1px) and
+ * `--region-line` (2px), so the chalk rules follow the tokens below automatically.
+ *
+ * Contrast (WCAG, measured):  body text 12.2:1 · secondary/chalk labels 8.6:1 ·
+ * CTA label on accent 10.6:1 · accent-ink on accent 10.6:1 — all ≥ AA.
+ */
 
 .doku[data-theme="blackboard"] .cell.hue-filled:not(.selected):not(.matching) {
-  box-shadow: inset 0 0 0 2px #26292e33;
+  box-shadow: inset 0 0 0 2px #0e1613;
 }
+
 .doku[data-theme="blackboard"],
 [data-doku-theme="blackboard"] {
-  --bg: #f7f2e7;
-  --surface: #fffdf8e8;
-  --surface-soft: #d9ebf4cc;
-  --text: #26292e;
-  --muted: #5b6168;
-  --accent: #235f91;
-  --accent-ink: #fffdf8;
-  --accent-soft: #d9ebf4;
-  --grid-line: #768a96;
-  --region-line: #292d31;
-  --error: #b21628;
-  --dialog-bg: #fffdf8;
-  color-scheme: light;
+  --bg: #1b2723;
+  --surface: #334139;
+  --surface-soft: #23302a;
+  --text: #eef3ea;
+  --muted: #a6b6a8;
+  --accent: #efd98a;
+  --accent-ink: #1f2a22;
+  --accent-soft: #3d4636;
+  --grid-line: #46544c;
+  --region-line: #ccd8cb;
+  --error: #f0a29e;
+  --dialog-bg: #202c26;
+  color-scheme: dark;
 }
+
 .theme-blackboard {
-  background: #f7f2e7 url("/assets/themes/blackboard-notebook.webp") center/cover;
-  color: #26292e;
-  border: 2px solid #26292e;
+  background: #1b2723 url("/assets/themes/blackboard-chalk.svg");
+  color: #efd98a;
+  border: 2px solid #ccd8cb;
   border-radius: 8px 3px 10px 4px;
-  box-shadow: 2px 3px 0 #768a96;
+  box-shadow: 2px 3px 0 #46544c;
 }
+
+/* Board surface: one chalk-dust grain over the slate, a soft top light, and the
+   doodle frame pinned to the viewport. The frame drops away below 1400px, where
+   there is no gutter wide enough to hold it clear of the content. */
 .doku[data-theme="blackboard"] {
-  font-family: "Bradley Hand", cursive;
+  --board-doodles: url("/assets/themes/blackboard-doodles.svg");
+  font-family: "DM Sans", sans-serif;
   background-color: var(--bg);
-  background-image: url("/assets/themes/blackboard-notebook.webp");
-  background-size: 100% auto;
-  background-position: center top;
-  background-repeat: repeat-y;
-  background-attachment: fixed;
+  background-image:
+          var(--board-doodles),
+          url("/assets/themes/blackboard-chalk.svg"),
+          radial-gradient(120% 80% at 50% -12%, #ffffff0f, transparent 62%);
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-position: center, 0 0, center;
+  background-size: cover, 240px 240px, cover;
+  background-attachment: fixed, scroll, scroll;
 }
+
+@media (max-width: 1399px) {
+  .doku[data-theme="blackboard"] {
+    --board-doodles: none;
+  }
+}
+
+/* Chalk type. Handwriting carries no negative tracking. */
 .doku[data-theme="blackboard"] .brand,
 .doku[data-theme="blackboard"] h1,
 .doku[data-theme="blackboard"] h2,
-.doku[data-theme="blackboard"] h3 {
-  font-family: "Bradley Hand", cursive;
-  letter-spacing: -0.025em;
-  text-shadow: 1px 2px 0 #fff;
+.doku[data-theme="blackboard"] h3,
+.doku[data-theme="blackboard"] .page-title,
+.doku[data-theme="blackboard"] .result-grid strong,
+.doku[data-theme="blackboard"] .empty-state h2,
+.doku[data-theme="blackboard"] .friend-metrics > span {
+  font-family: "Chalkboard SE", "Chalkboard", "Marker Felt", "Bradley Hand",
+  "Comic Sans MS", cursive;
+  letter-spacing: 0;
+  text-shadow: 0 1px 0 #0d1411;
 }
+
 .doku[data-theme="blackboard"] .eyebrow {
-  color: #235f91;
-  letter-spacing: 0.14em;
+  color: var(--accent);
+  letter-spacing: 0.16em;
 }
+
+/* The puzzle is written straight onto the board — no cell fill, so the grain and
+   the slate show through and the inline chalk grid stays crisp. */
 .doku[data-theme="blackboard"] .board {
-  border: 3px solid #292d31;
-  border-radius: 9px 3px 12px 5px;
-  background: #fffdf8e8;
-  box-shadow: 5px 6px 0 #6c7e88;
-  transform: rotate(0.25deg);
+  background: transparent;
+  border: 2px solid var(--region-line);
+  box-shadow:
+          0 0 0 1px #ffffff0f,
+          0 10px 24px #00000059;
 }
+
 .doku[data-theme="blackboard"] .cell {
-  background: #fffdf8d9;
-  font-family: "Comic Sans MS", "Bradley Hand", cursive !important;
+  background: transparent;
+  font-family: "Chalkboard SE", "Chalkboard", "Marker Felt", "Bradley Hand",
+  "Comic Sans MS", cursive !important;
   font-weight: 700 !important;
+  text-shadow: 0 0 5px #ffffff24;
 }
+
 .doku[data-theme="blackboard"] .cell.region-1 {
-  background: #d9ebf4d9;
+  background: #23302a80;
 }
-.doku[data-theme="blackboard"] .cell.matching {
-  background: #f4d468;
-  color: #26292e;
+
+.doku[data-theme="blackboard"] .notes-grid {
+  color: var(--muted);
+  text-shadow: none;
 }
+
 .doku[data-theme="blackboard"] .notes-grid .note-match {
-  background: #f4d468;
-  color: #26292e;
-  border-radius: 3px 1px 3px 1px;
-  box-shadow: 1px 1px 0 #92877a;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 3px;
+  box-shadow: 1px 1px 0 #0d1411;
+  text-shadow: none;
 }
-.doku[data-theme="blackboard"] .cell.selected {
-  background: #f2c9bf;
-  box-shadow: inset 0 0 0 3px #c83f35;
+
+.doku[data-theme="blackboard"] .board[data-variant="jigsaw"] .cell.matching {
+  background-color: var(--accent);
 }
+
+.doku[data-theme="blackboard"] .board[data-variant="jigsaw"] .cell.selected {
+  background-color: var(--accent-soft);
+}
+
+/* Controls read as chalk outlines on the slate. */
 .doku[data-theme="blackboard"] .icon-button,
 .doku[data-theme="blackboard"] .labeled-icon > span,
 .doku[data-theme="blackboard"] .keypad > button,
-.doku[data-theme="blackboard"] .primary,
 .doku[data-theme="blackboard"] .secondary,
 .doku[data-theme="blackboard"] .type-option,
 .doku[data-theme="blackboard"] .level-options button,
-.doku[data-theme="blackboard"] .input-order select {
-  border: 2px solid #292d31;
-  border-radius: 9px 4px 11px 5px;
-  background: #fffdf8e8;
-  box-shadow: 3px 4px 0 #768a96;
-}
-.doku[data-theme="blackboard"] .keypad > button {
-  font-family: "Comic Sans MS", "Bradley Hand", cursive !important;
-  font-weight: 700;
-  background: #fffdf8;
-}
-.doku[data-theme="blackboard"] .keypad > button:nth-child(3n + 1) {
-  transform: rotate(-1deg);
-}
-.doku[data-theme="blackboard"] .keypad > button:nth-child(3n) {
-  transform: rotate(0.8deg);
-}
-.doku[data-theme="blackboard"] .keypad > button.active {
-  background: #f4d468;
-  color: #26292e;
-  transform: translate(2px, 3px) rotate(-0.5deg);
-  box-shadow:
-    1px 1px 0 #768a96,
-    inset 0 0 0 2px #c83f35;
-}
-.doku[data-theme="blackboard"] .pen-toggle {
-  border: 2px solid #292d31;
-  border-radius: 12px 4px 10px 5px;
-  background: #fffdf8e8;
-  box-shadow: 3px 4px 0 #768a96;
-  transform: rotate(-0.4deg);
-}
-.doku[data-theme="blackboard"] .pen-toggle button {
-  border-radius: 8px 3px 10px 4px;
-}
-.doku[data-theme="blackboard"] .timer {
-  border: 2px solid #292d31;
-  border-radius: 8px 3px 10px 4px;
-  background: #fffdf8e8;
-  color: #235f91;
-  box-shadow: 3px 3px 0 #768a96;
-  transform: rotate(1deg);
-}
-.doku[data-theme="blackboard"] .page,
-.doku[data-theme="blackboard"] .home-content {
-  background: #fffdf8bd;
-  padding-inline: 18px;
-  border-radius: 7px 15px 5px 11px;
-}
+.doku[data-theme="blackboard"] .input-order select,
 .doku[data-theme="blackboard"] .history-icon,
 .doku[data-theme="blackboard"] .share-link,
 .doku[data-theme="blackboard"] .notice {
-  border: 2px solid #292d31;
-  border-radius: 7px 3px 9px 4px;
-  background: #fffdf8e8;
-  box-shadow: 3px 3px 0 #768a96;
+  border: 2px solid var(--grid-line);
+  border-radius: 11px 5px 13px 6px;
+  background: var(--surface);
+  box-shadow: 0 1px 0 #0d1411;
 }
+
+.doku[data-theme="blackboard"] .icon-button,
+.doku[data-theme="blackboard"] .labeled-icon > span {
+  border-radius: 50%;
+}
+
+.doku[data-theme="blackboard"] .keypad > button {
+  font-family: "Chalkboard SE", "Chalkboard", "Marker Felt", "Bradley Hand",
+  "Comic Sans MS", cursive !important;
+  font-weight: 700;
+}
+
+.doku[data-theme="blackboard"] .keypad > button:nth-child(3n + 1) {
+  transform: rotate(-0.7deg);
+}
+
+.doku[data-theme="blackboard"] .keypad > button:nth-child(3n) {
+  transform: rotate(0.6deg);
+}
+
+.doku[data-theme="blackboard"] .keypad > button.active {
+  transform: translate(1px, 2px);
+  box-shadow: inset 0 0 0 1px #0d1411;
+}
+
+.doku[data-theme="blackboard"] .pen-toggle {
+  border: 2px solid var(--grid-line);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 1px 0 #0d1411;
+}
+
+.doku[data-theme="blackboard"] .pen-toggle button {
+  border-radius: 999px;
+}
+
+.doku[data-theme="blackboard"] .timer {
+  border: 2px solid var(--grid-line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 1px 0 #0d1411;
+}
+
 .doku[data-theme="blackboard"] .primary {
-  background: #c83f35;
-  color: #fffdf8;
+  border-radius: 11px 5px 13px 6px;
+  box-shadow: 0 2px 0 #0d1411;
 }
+
+/* Panels that are paper elsewhere become chalkboard panels here. */
+.doku[data-theme="blackboard"] .page,
+.doku[data-theme="blackboard"] .home-content {
+  background: #23302a4d;
+  border-radius: 10px;
+  padding-inline: 18px;
+}
+
 html[data-doku-theme="blackboard"] .bottom-sheet {
-  border: 3px solid #292d31;
+  border: 2px solid var(--grid-line);
   border-bottom: 0;
   border-radius: 12px 5px 0 0;
-  background: #fffdf8 url("/assets/themes/blackboard-notebook.webp") center top/100%
-    auto repeat-y;
-  box-shadow: 0 -7px 0 #768a96;
-  font-family: "Comic Sans MS", "Bradley Hand", cursive;
+  background: var(--dialog-bg) url("/assets/themes/blackboard-chalk.svg");
+  box-shadow: 0 -7px 0 #0d1411;
+  font-family: "DM Sans", sans-serif;
 }
+
 @media (max-width: 700px) {
   .doku[data-theme="blackboard"] .page,
   .doku[data-theme="blackboard"] .home-content {
     padding-inline: 10px;
   }
 }
+
 .doku[data-theme="blackboard"] {
-  --jigsaw-0: #fffdf8e8;
-  --jigsaw-1: #d9ebf4dc;
-  --jigsaw-2: #f5e7bcdc;
-  --jigsaw-3: #f3d9d5dc;
-  --jigsaw-4: #dcebdadc;
-  --jigsaw-5: #e8ddf1dc;
-  --jigsaw-6: #f1dfccdc;
-  --jigsaw-7: #d9ece9dc;
-  --jigsaw-8: #e5e5dedc;
+  --jigsaw-0: #1f2b26;
+  --jigsaw-1: #243230;
+  --jigsaw-2: #28352c;
+  --jigsaw-3: #1c2a2b;
+  --jigsaw-4: #2b3630;
+  --jigsaw-5: #20302e;
+  --jigsaw-6: #2f3a30;
+  --jigsaw-7: #22302f;
+  --jigsaw-8: #263327;
 }
-.doku[data-theme="blackboard"] .board[data-variant="jigsaw"] .cell.matching {
-  background-color: #f4d468;
-}
-.doku[data-theme="blackboard"] .board[data-variant="jigsaw"] .cell.selected {
-  background-color: #f2c9bf;
-}
+
 .doku[data-theme="blackboard"] {
-  --theme-value-font: "Comic Sans MS", "Bradley Hand", cursive;
+  --theme-value-font: "Chalkboard SE", "Chalkboard", "Marker Felt", "Bradley Hand",
+  "Comic Sans MS", cursive;
   --theme-value-weight: 700;
-  --selected-note-color: #26292e;
-  --active-key-bg: #f4d468;
-  --active-key-ink: #26292e;
+  --selected-note-color: #eef3ea;
+  --active-key-bg: #efd98a;
+  --active-key-ink: #1f2a22;
 }
-.doku[data-theme="blackboard"] .cell.selected {
-  background: #d9ebf4;
-  box-shadow: inset 0 0 0 3px #235f91;
-}
-.doku[data-theme="blackboard"] .primary {
-  background: #235f91;
-  color: #fff;
-}
-.doku[data-theme="blackboard"] .keypad > button.active {
-  box-shadow:
-    0 4px 0 #768a96,
-    inset 0 0 0 2px #235f91;
-}
+
 .doku[data-theme="blackboard"] .brand > span,
-.doku[data-theme="blackboard"] .eyebrow,
 .doku[data-theme="blackboard"] .type-option > svg {
-  color: #235f91;
+  color: var(--accent);
 }
+
 .theme-peek-blackboard {
-  --peek-cell: #fffdf8;
-  --peek-ink: #26292e;
-  --peek-lit: #f4d468;
-  --peek-lit-ink: #26292e;
-  background: #f7f2e7 url("/assets/themes/blackboard-notebook.webp") center/cover;
-  color: #26292e;
-  border: 2px solid #292d31;
-  border-radius: 9px 3px 11px 5px;
-  box-shadow: 6px 7px 0 #768a96;
-  font-family: "Comic Sans MS", "Bradley Hand", cursive;
+  --peek-cell: #23302a;
+  --peek-ink: #eef3ea;
+  --peek-lit: #efd98a;
+  --peek-lit-ink: #1f2a22;
+  background: #1b2723 url("/assets/themes/blackboard-chalk.svg");
+  color: #eef3ea;
+  border: 2px solid #ccd8cb;
+  border-radius: 8px 3px 10px 4px;
+  box-shadow: 6px 7px 0 #46544c;
+  font-family: "Chalkboard SE", "Chalkboard", "Marker Felt", "Bradley Hand",
+  cursive;
 }
+
 .doku[data-theme="blackboard"] .roadmap-lane,
 .doku[data-theme="blackboard"] .roadmap-card {
   border-width: 2px;

@@ -6,6 +6,7 @@ const publicPaths = new Set([
   "/play/",
   "/how/",
   "/history/",
+  "/profile/",
   "/roadmap/",
   "/privacy/",
   "/terms/",

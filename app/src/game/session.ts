@@ -1,8 +1,9 @@
-import { candidates, peers, type Puzzle } from './engine';
+import { candidates, peers, type Puzzle } from './engine.js';
+import { newId } from './id.js';
 export type PlayEvent = {kind:'set';cell:number;value:number} | {kind:'hint'|'reveal';cell:number} | {kind:'check'|'autofill'} | {kind:'autocheck'|'conflicts';enabled:boolean};
 export type Snapshot = { values:number[]; notes:number[][] };
 export type Session = Snapshot & { id:string; puzzle:Puzzle; first:(number|null)[]; events:PlayEvent[]; past:Snapshot[]; future:Snapshot[]; seconds:number; startedAt:string; completedAt?:string; challenge?:{id:string;attemptId:string;token:string}; submitted?:boolean };
-export function newSession(puzzle:Puzzle):Session { return { id:crypto.randomUUID(),puzzle,values:[...puzzle.givens],notes:Array.from({length:81},()=>[]),first:Array(81).fill(null),events:[],past:[],future:[],seconds:0,startedAt:new Date().toISOString() }; }
+export function newSession(puzzle:Puzzle):Session { return { id:newId(),puzzle,values:[...puzzle.givens],notes:Array.from({length:81},()=>[]),first:Array(81).fill(null),events:[],past:[],future:[],seconds:0,startedAt:new Date().toISOString() }; }
 const snapshot=(s:Session):Snapshot=>({values:[...s.values],notes:s.notes.map(n=>[...n])});
 function commit(s:Session):Session {return {...s,...snapshot(s),first:[...s.first],events:[...s.events],past:[...s.past.slice(-199),snapshot(s)],future:[]};}
 export function enter(s:Session,cell:number,value:number,note=false,removeNotes=true):Session {

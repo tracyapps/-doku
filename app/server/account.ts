@@ -4,6 +4,7 @@ import express from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth, accountProviders } from "./auth.js";
 import type { PlayRecord } from "../src/game/records.js";
+import { boardRoutes, deleteFriendships, friendRoutes } from "./social.js";
 
 type Req = express.Request & { userId?: string };
 const fail = (message: string, status = 400): never => {
@@ -40,6 +41,9 @@ export function accountRouter() {
     res.json({ enabled: true, providers: accountProviders() });
   });
 
+  // Leaderboard (global works signed out) + admin par check.
+  boardRoutes(router);
+
   // Everything below needs a session.
   router.use("/me", async (req: Req, _res, next) => {
     try {
@@ -51,6 +55,8 @@ export function accountRouter() {
       next(e);
     }
   });
+
+  friendRoutes(router);
 
   router.get("/me", async (req: Req, res, next) => {
     try {
@@ -153,6 +159,7 @@ export function accountRouter() {
     try {
       const db = await adapter();
       const id = req.userId!;
+      await deleteFriendships(id);
       for (const model of ["playRecord", "passkey", "session", "account"])
         await db.deleteMany({ model, where: [{ field: "userId", value: id }] });
       await db.delete({ model: "user", where: [{ field: "id", value: id }] });

@@ -87,6 +87,8 @@ import {
   signInWithProvider,
   signOut,
   syncRecords,
+  addFriend,
+  pendingFriendCode,
   updateProfile,
   type AccountConfig,
   type Profile,
@@ -128,6 +130,17 @@ import {
   type RoadmapFeed,
   type RoadmapIssue,
 } from "./game/network";
+import { ResultViews } from "./results/ResultViews";
+import { LeaderboardScreen } from "./social/Leaderboard";
+import { FriendsPanel } from "./social/FriendsPanel";
+import {
+  DEFAULT_RESULT_VIEWS,
+  RESULT_VIEWS,
+  groupWithYou,
+  playerFromChallenge,
+  playerFromSession,
+  type ResultView,
+} from "./results/model";
 import "@fontsource/outfit/latin-800.css";
 import "@fontsource/outfit/latin-900.css";
 import "@fontsource/dm-sans/latin-400.css";
@@ -144,6 +157,7 @@ type Screen =
   | "results"
   | "how"
   | "friends"
+  | "leaderboard"
   | "roadmap"
   | "terms"
   | "privacy"
@@ -174,6 +188,7 @@ type Settings = {
   noteSize: number;
   weight: "theme" | number;
   font: "theme" | "sans" | "serif" | "mono";
+  resultViews: Record<ResultView, boolean>;
 };
 const defaults: Settings = {
   theme: "night",
@@ -188,6 +203,7 @@ const defaults: Settings = {
   noteSize: 1,
   weight: "theme",
   font: "theme",
+  resultViews: DEFAULT_RESULT_VIEWS,
 };
 const themeOptions: { id: Theme; label: string }[] = [
   { id: "retro", label: "Retro" },
@@ -277,6 +293,7 @@ const PUBLIC_PATHS: Partial<Record<Screen, string>> = {
   game: "/play/",
   history: "/history/",
   profile: "/profile/",
+  leaderboard: "/leaderboard/",
   how: "/how/",
   roadmap: "/roadmap/",
   privacy: "/privacy/",
@@ -788,10 +805,14 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
   const [playerName, setPlayerName] = useState(() =>
     readSaved<string>("doku.name.v1", ""),
   );
-  const [settings, setSettings] = useState<Settings>(() => ({
-    ...defaults,
-    ...readSaved(SETTINGS, {}),
-  }));
+  const [settings, setSettings] = useState<Settings>(() => {
+    const saved = readSaved<Partial<Settings>>(SETTINGS, {});
+    return {
+      ...defaults,
+      ...saved,
+      resultViews: { ...DEFAULT_RESULT_VIEWS, ...saved.resultViews },
+    };
+  });
   const [session, setSession] = useState<Session | null>(() =>
     readSaved(ACTIVE, null),
   );
@@ -858,6 +879,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     if (path === "/styleguide/") return "styleguide";
     if (path === "/history/") return "history";
     if (path === "/profile/") return "profile";
+    if (path === "/leaderboard/") return "leaderboard";
     if (path === "/play/")
       return session && !session.completedAt ? "game" : "setup";
     return page === "privacy" ||
@@ -1501,6 +1523,35 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       setBusy(false);
     }
   };
+  // Friend invite links (/profile/?friend=CODE): remember the code until the
+  // player is signed in, then add the friendship.
+  const [pendingFriend, setPendingFriend] = useState(() => {
+    const code = new URLSearchParams(location.search).get("friend");
+    if (code) {
+      pendingFriendCode.set(code);
+      const url = new URL(location.href);
+      url.searchParams.delete("friend");
+      window.history.replaceState(window.history.state, "", url);
+    }
+    return code || pendingFriendCode.get();
+  });
+  useEffect(() => {
+    if (!profile || !pendingFriend) return;
+    const code = pendingFriend;
+    pendingFriendCode.clear();
+    setPendingFriend("");
+    addFriend(code)
+      .then((f) => notify(`You and ${f.name} are now friends.`))
+      .catch((e: Error) => notify(e.message));
+  }, [profile, pendingFriend]);
+  // Viewing a challenge result: load friends' results for the comparisons.
+  useEffect(() => {
+    const id = screen === "results" ? result?.challenge?.id : undefined;
+    if (!id || challengeData?.id === id) return;
+    getChallenge(id)
+      .then(setChallengeData)
+      .catch(() => undefined);
+  }, [screen, result?.challenge?.id, challengeData?.id]);
   const friends = async () => {
     const id = session?.challenge?.id || challengeId;
     setSheet(null);
@@ -1628,6 +1679,18 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       <CaretLeft size={18} /> {to === "game" ? "Back to puzzle" : "Back"}
     </button>
   );
+  // Your result plus friends' results on the same challenge, if any.
+  const resultGroup = (s: Session) => {
+    const you = playerFromSession(s, "You");
+    const others =
+      s.challenge && challengeData?.id === s.challenge.id
+        ? challengeData.results.map((r) =>
+            playerFromChallenge(r, challengeData.variant, s.challenge?.attemptId),
+          )
+        : [];
+    return groupWithYou(you, others);
+  };
+  const anyResultView = RESULT_VIEWS.some((v) => settings.resultViews[v.id]);
   const renderResult = (s: Session) => {
     const st = stats(s);
     return (
@@ -1641,6 +1704,15 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             { month: "short", day: "numeric" },
           )}
         </p>
+        {anyResultView && (
+          <ResultViews
+            theme={settings.theme}
+            enabled={settings.resultViews}
+            session={s}
+            group={resultGroup(s)}
+          />
+        )}
+        {!anyResultView && (
         <div className="result-grid">
           <div>
             <Timer />
@@ -1663,6 +1735,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             <span>Answer checks</span>
           </div>
         </div>
+        )}
         <div className="achievement">
           <Trophy size={30} />
           <div>
@@ -1860,6 +1933,14 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               <span>
                 <strong>Your puzzle history</strong>
                 <small>Revisit a win. Pass on a challenge.</small>
+              </span>
+              <ArrowRight />
+            </button>
+            <button onClick={() => go("leaderboard")}>
+              <Trophy size={26} />
+              <span>
+                <strong>Leaderboards</strong>
+                <small>See how friends did on the daily puzzles.</small>
               </span>
               <ArrowRight />
             </button>
@@ -2570,6 +2651,12 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           <h1 className="page-title">
             {profile?.name || playerName || "Your profile"}
           </h1>
+          {accountConfig?.enabled && !profile && pendingFriend && (
+            <p className="account-note invite-pending" role="status">
+              A friend invited you. Sign in below and you’ll be added as
+              friends automatically.
+            </p>
+          )}
           {accountConfig?.enabled && (
             <section className="account-card" aria-labelledby="account-title">
               {!profile ? (
@@ -2806,6 +2893,9 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               )}
             </section>
           )}
+          {accountConfig?.enabled && profile && (
+            <FriendsPanel profile={profile} onProfile={setProfile} notify={notify} />
+          )}
           <section aria-labelledby="often-title">
             <h2 id="often-title" className="section-label">
               How often you play
@@ -2936,6 +3026,15 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           {renderResult(activeSession)}
         </main>
       )}
+      {screen === "leaderboard" && (
+        <main className="page leaderboard-page">
+          <Back />
+          <LeaderboardScreen
+            signedIn={!!profile}
+            onOpenProfile={() => go("profile")}
+          />
+        </main>
+      )}
       {screen === "friends" && (
         <main className="page">
           <Back to={session ? "game" : "home"} />
@@ -2960,6 +3059,22 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                 Open history
               </button>
             </div>
+          ) : anyResultView &&
+            (settings.resultViews.radar ||
+              settings.resultViews.tracks ||
+              settings.resultViews.grid) ? (
+            <ResultViews
+              theme={settings.theme}
+              enabled={{ ...settings.resultViews, run: false, tape: false }}
+              group={(() => {
+                const mine = (session || result)?.challenge?.attemptId;
+                const all = challengeData.results.map((r) =>
+                  playerFromChallenge(r, challengeData.variant, mine),
+                );
+                const you = all.find((p) => p.you);
+                return you ? groupWithYou(you, all) : all;
+              })()}
+            />
           ) : (
             <div className="friend-list">
               {challengeData.results.map((r, i) => (
@@ -3559,6 +3674,24 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             <option value={700}>Bold</option>
           </select>
         </label>
+        <h3>Result displays</h3>
+        <p className="muted setting-intro">
+          Choose which views appear after you finish a puzzle.
+        </p>
+        {RESULT_VIEWS.map((v) => (
+          <Toggle
+            key={v.id}
+            label={v.label}
+            description={v.description}
+            value={settings.resultViews[v.id]}
+            onChange={(on) =>
+              setPreference("resultViews", {
+                ...settings.resultViews,
+                [v.id]: on,
+              })
+            }
+          />
+        ))}
         <h3>Gameplay</h3>
         <div className="setting-row input-order-setting">
           <span>
@@ -3722,6 +3855,9 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           </button>
           <button onClick={() => go("history")}>
             <ClockCounterClockwise /> Puzzle history
+          </button>
+          <button onClick={() => go("leaderboard")}>
+            <Trophy /> Leaderboards
           </button>
           <button onClick={() => go("profile")}>
             <Medal /> Profile & badges

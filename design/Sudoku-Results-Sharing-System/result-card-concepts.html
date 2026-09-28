@@ -1,0 +1,1191 @@
+<!doctype html>
+<html lang="en" data-skin="night" data-scheme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>*doku — result display concepts</title>
+<meta name="description" content="Five ways to display a *doku result: time, first-entry accuracy, hints and checks against difficulty, shareable and comparable across friends." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   1. Skin tokens — the *doku contract, read from the live themes.
+      The result display consumes tokens only, never board quirks,
+      so it inherits whichever skin the player has chosen.
+   ============================================================ */
+:root{
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --font-display:"Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-body:"DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --r-pill:999px;
+}
+[data-skin]{
+  --bg:#0d1928; --surface:#1c2a3b; --surface-soft:#142233; --text:#f5f6fa;
+  --muted:#a9bbd2; --accent:#9bf0c4; --accent-ink:#102f25; --accent-soft:#203e3c;
+  --grid-line:#35465b; --region-line:#a7bbd4; --error:#ff9eaa; --dialog-bg:#172536;
+  color-scheme:dark;
+  /* Derived, theme-safe roles. Surfaces keep secondary text at AA on every
+     skin — including skins whose --surface is a saturated fill (e.g. retro). */
+  --card:color-mix(in srgb,var(--surface) 34%,var(--bg));
+  --label:color-mix(in srgb,var(--muted) 58%,var(--text));
+  /* Accent is used as a fill, never as small text. Where a painted fill carries
+     a label, --accent-ui/--on-accent is the guaranteed AA pair. */
+  --accent-ui:var(--accent);
+  --on-accent:var(--accent-ink);
+}
+[data-skin="night"]{--bg:#0d1928;--surface:#1c2a3b;--surface-soft:#142233;--text:#f5f6fa;--muted:#a9bbd2;--accent:#9bf0c4;--accent-ink:#102f25;--accent-soft:#203e3c;--grid-line:#35465b;--region-line:#a7bbd4;--error:#ff9eaa;--dialog-bg:#172536;color-scheme:dark}
+[data-skin="glass"]{--bg:#101a36;--surface:#ffffff18;--surface-soft:#ffffff0c;--text:#f7faff;--muted:#bdc9e9;--accent:#75eff4;--accent-ink:#092036;--accent-soft:#75eff433;--grid-line:#ffffff24;--region-line:#d8f8ffb8;--error:#ff9bab;--dialog-bg:#182442;color-scheme:dark}
+[data-skin="plum"]{--bg:#181023;--surface:#3b2d4c;--surface-soft:#2c223a;--text:#fbf5ff;--muted:#c7b5d9;--accent:#ecc0f7;--accent-ink:#35213d;--accent-soft:#594062;--grid-line:#594665;--region-line:#c4a9d2;--error:#ffaba6;--dialog-bg:#30233e;color-scheme:dark}
+[data-skin="retro"]{--bg:#173252;--surface:#f1c85b;--surface-soft:#244b70;--text:#fff4d6;--muted:#e6cf9c;--accent:#ff6b3d;--accent-ink:#182846;--accent-soft:#ffe09a;--grid-line:#31597d;--region-line:#fff0bd;--error:#ffaea0;--dialog-bg:#1d3c60;color-scheme:dark}
+[data-skin="contrast"]{--bg:#050505;--surface:#1b1b1b;--surface-soft:#111;--text:#fff;--muted:#dedede;--accent:#ffe96b;--accent-ink:#090909;--accent-soft:#403b19;--grid-line:#777;--region-line:#fff;--error:#ffa4ae;--dialog-bg:#101010;color-scheme:dark}
+[data-skin="comic-dark"]{--bg:#20201f;--surface:#4e4e4e;--surface-soft:#2a5856;--text:#f1ffac;--muted:#d6d9c3;--accent:#df3328;--accent-ink:#f0ecec;--accent-soft:#ffdc46;--grid-line:#171717;--region-line:#171717;--error:#ed1f29;--dialog-bg:#2f2f2e;color-scheme:dark}
+[data-skin="rounded-dark"]{--bg:#102534;--surface:#06111f;--surface-soft:#06111f;--text:#f6f9ff;--muted:#9ea6b2;--accent:#fc34d4;--accent-ink:#0f0f0f;--accent-soft:#44515d;--grid-line:#a7c8eb;--region-line:#4d7db4;--error:#ff436c;--dialog-bg:#102534;color-scheme:dark}
+[data-skin="paper"]{--bg:#faf7f1;--surface:#eee9e3;--surface-soft:#f5f0e9;--text:#242938;--muted:#626775;--accent:#705caf;--accent-ink:#fff;--accent-soft:#e7def8;--grid-line:#d2cbd3;--region-line:#666375;--error:#b71e45;--dialog-bg:#faf7f1;color-scheme:light}
+[data-skin="rounded"]{--bg:#e9f4ff;--surface:#fff;--surface-soft:#d7eaff;--text:#17345f;--muted:#55729b;--accent:#2d79ef;--accent-ink:#fff;--accent-soft:#b9dcff;--grid-line:#a7c8eb;--region-line:#4d7db4;--error:#c12546;--dialog-bg:#f3f9ff;color-scheme:light}
+[data-skin="doodle"]{--bg:#f7f2e7;--surface:#fffdf8;--surface-soft:#d9ebf4;--text:#26292e;--muted:#5b6168;--accent:#235f91;--accent-ink:#fffdf8;--accent-soft:#d9ebf4;--grid-line:#768a96;--region-line:#292d31;--error:#b21628;--dialog-bg:#fffdf8;color-scheme:light}
+/* Blackboard — the dark counterpart to doodle. Slate-green board, chalk text,
+   a chalk-dust texture and half-erased doodles around the frame (section 13). */
+[data-skin="blackboard"]{--bg:#1b2723;--surface:#334139;--surface-soft:#23302a;--text:#eef3ea;--muted:#a6b6a8;--accent:#efd98a;--accent-ink:#1f2a22;--accent-soft:#3d4636;--grid-line:#46544c;--region-line:#ccd8cb;--error:#f0a29e;--dialog-bg:#202c26;color-scheme:dark;--font-display:"Chalkboard SE","Chalkboard","Marker Felt","Bradley Hand",cursive;--dust:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='240'%20height='240'%3E%3Cfilter%20id='d'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.9'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0%200%200%200%201%200%200%200%200%201%200%200%200%200%201%200.09%200.09%200.09%200%200'/%3E%3C/filter%3E%3Crect%20width='240'%20height='240'%20filter='url(%23d)'/%3E%3C/svg%3E")}
+[data-skin="comic"]{--bg:#fdf8e3;--surface:#fffdf3;--surface-soft:#70c9ec;--text:#171717;--muted:#54503f;--accent:#df3328;--accent-ink:#fff;--accent-soft:#ffdc46;--grid-line:#171717;--region-line:#171717;--error:#d81f22;--dialog-bg:#fffdf3;color-scheme:light}
+
+/* Scheme-level categorical colors for comparing up to four players.
+   Derived per scheme so markers stay ≥3:1 against the page in every skin. */
+[data-scheme="dark"]{
+  --p1:var(--accent);
+  --p2:oklch(79% 0.11 205);
+  --p3:oklch(84% 0.12 88);
+  --p4:oklch(79% 0.12 342);
+  --track:oklch(100% 0 0 / 0.12);
+  --mk-ink:oklch(16% 0.02 250);
+}
+/* Targeted QA for two shipped skins whose own accent/accent-ink pair falls
+   below AA on small labels. Same hue families, corrected lightness. */
+[data-skin="rounded"]{--accent-ui:#1f5fd6;--on-accent:#fff}
+[data-skin="comic-dark"]{--accent-ui:#b52f26;--on-accent:#f2eeee;--p1:oklch(72% 0.16 28)}
+[data-skin="comic-dark"] .track .mk.p1{--ink:oklch(16% 0.02 28)}
+[data-skin="retro"]{--p1:oklch(78% 0.14 48)}
+[data-scheme="light"]{
+  --p1:var(--accent);
+  --p2:oklch(44% 0.15 244);
+  --p3:oklch(46% 0.14 66);
+  --p4:oklch(44% 0.17 350);
+  --track:oklch(0% 0 0 / 0.12);
+  --mk-ink:oklch(99% 0 0);
+}
+
+/* ============================================================
+   2. Base
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font-body);font-size:16px;line-height:1.6;
+  font-synthesis:none;-webkit-font-smoothing:antialiased;
+  transition:background .25s ease,color .25s ease;
+}
+h1,h2,h3{margin:0;font-family:var(--font-display);font-weight:800;letter-spacing:-0.02em;line-height:1.12;text-wrap:balance}
+p{margin:0}
+b,strong{font-weight:700}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+:where(a,button,input,label,[tabindex]):focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:6px}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ============================================================
+   3. Page chrome
+   ============================================================ */
+.shell{position:relative;z-index:1;max-width:1140px;margin-inline:auto;padding:clamp(28px,5vw,64px) clamp(16px,3.4vw,36px) 120px}
+.masthead{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-end;justify-content:space-between}
+.brandline{font-family:var(--font-display);font-weight:900;letter-spacing:-0.06em;font-size:clamp(32px,6vw,46px);line-height:1}
+.brandline span{color:var(--accent)}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--text);margin-bottom:10px}
+.lede{max-width:62ch;color:var(--label);margin-top:12px;font-size:15.5px}
+.toolbar{display:grid;gap:14px;min-width:min(100%,340px)}
+
+/* Segmented + chips: real radios, keyboard native */
+.seg{display:flex;gap:4px;padding:4px;border:1px solid var(--grid-line);border-radius:var(--r-pill);background:var(--surface-soft);width:max-content}
+.seg label{position:relative;display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border-radius:var(--r-pill);font-size:13px;font-weight:700;letter-spacing:0.02em;color:var(--label);cursor:pointer;min-height:38px}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg input:checked + span{color:var(--accent-ink)}
+.seg label:has(input:checked){background:var(--accent-ui);color:var(--on-accent)}
+.seg label:hover:not(:has(input:checked)){color:var(--text)}
+.seg label:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:3px}
+
+.field{display:grid;gap:8px}
+.field > .lbl{font-size:11.5px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--label)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{position:relative;display:inline-flex;align-items:center;gap:7px;padding:7px 12px 7px 8px;border:1px solid var(--grid-line);border-radius:var(--r-pill);font-size:12.5px;font-weight:600;color:var(--label);cursor:pointer;min-height:36px;background:var(--surface-soft)}
+.chip input{position:absolute;opacity:0;width:1px;height:1px}
+.chip .dot{width:15px;height:15px;border-radius:50%;border:1px solid var(--grid-line);box-shadow:inset 0 0 0 3px var(--sw-bg,transparent)}
+.chip:has(input:checked){border-color:var(--accent);color:var(--text);box-shadow:0 0 0 1px var(--accent)}
+.chip:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+.chip:hover{color:var(--text)}
+
+/* ============================================================
+   4. Section shell
+   ============================================================ */
+.section{margin-top:clamp(46px,7vw,84px)}
+.section-head{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--grid-line);padding-bottom:16px;margin-bottom:26px}
+.section-head h2{font-size:clamp(22px,3.4vw,30px)}
+.idx{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--label);letter-spacing:0.06em}
+.bet{color:var(--label);font-size:14px;max-width:56ch;margin-top:8px}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 208px;gap:26px;align-items:start}
+#concept-tape .stage{grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr)}
+.reads{color:var(--label);font-size:13px;margin-top:16px;line-height:1.55}
+.reads b{color:var(--text)}
+.side{display:grid;gap:10px}
+.side .cap{font-size:11px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:var(--label)}
+
+.card{background:var(--card);border:1px solid var(--grid-line);border-radius:var(--r-lg);padding:clamp(18px,2.4vw,26px);
+  box-shadow:0 1px 0 color-mix(in srgb,var(--text) 6%,transparent)}
+
+/* ============================================================
+   5. Shared atoms (the result grammar)
+   ============================================================ */
+.steps{display:inline-flex;gap:3px;vertical-align:middle}
+.steps i{display:block;width:16px;height:6px;border-radius:3px;background:var(--grid-line)}
+.steps i.on{background:var(--accent)}
+.steps.lg i{width:26px;height:8px}
+
+.ring{display:block}
+.ring circle{fill:none;stroke-width:9}
+.ring .bg{stroke:var(--grid-line)}
+.ring .fg{stroke:var(--accent);stroke-linecap:round;transform:rotate(-90deg);transform-origin:50px 50px;transition:stroke-dashoffset .7s cubic-bezier(.2,.7,.2,1)}
+.ring-num{position:relative;display:grid;place-items:center;width:104px;height:104px}
+.ring-num .val{position:absolute;font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:-0.03em}
+
+.pips{display:inline-flex;align-items:center;gap:7px}
+.pips i{display:block;width:8px;height:8px;border-radius:50%;background:var(--grid-line)}
+.pips i.on{background:var(--accent)}
+.pips b{font-variant-numeric:tabular-nums;font-weight:700}
+
+.seal{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;letter-spacing:0.03em;padding:6px 12px;border-radius:var(--r-pill)}
+.seal.clean{background:var(--accent-ui);color:var(--on-accent)}
+.seal.sealed{border:1px solid var(--grid-line);color:var(--label)}
+.seal svg{width:15px;height:15px}
+
+.metric{display:flex;flex-direction:column;gap:8px}
+.metric .k{font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--label)}
+.metric .v{font-family:var(--font-display);font-weight:800;font-size:clamp(30px,4.2vw,40px);letter-spacing:-0.035em;line-height:1;font-variant-numeric:tabular-nums}
+.metric .sub{font-size:12.5px;color:var(--label)}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px 20px;margin-top:18px;padding-top:16px;border-top:1px solid var(--grid-line)}
+.legend .item{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--label)}
+.sw{width:14px;height:14px;border-radius:4px;border:1px solid var(--grid-line)}
+.sw.given{background:var(--region-line);opacity:.42}
+.sw.correct{background:var(--accent)}
+.sw.wrong{background:var(--error)}
+.sw.hint{background:repeating-linear-gradient(45deg,var(--accent) 0 3px,transparent 3px 6px);border-color:var(--accent)}
+.sw.reveal{background:repeating-linear-gradient(45deg,var(--error) 0 3px,transparent 3px 6px);border-color:var(--error)}
+.sw.blank{background:var(--surface-soft)}
+
+/* ============================================================
+   6. Concept 1 — Run (the 81-cell fingerprint)
+   ============================================================ */
+.run-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(20px,3vw,34px);align-items:center}
+.fp{display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);aspect-ratio:1;width:100%;
+  border:2px solid var(--region-line);border-radius:var(--r-md);overflow:hidden;isolation:isolate}
+.fp i{display:block;background:var(--surface-soft)}
+.fp i.given{background:color-mix(in srgb,var(--region-line) 42%,var(--bg))}
+.fp i.correct{background:var(--accent)}
+.fp i.wrong{background:var(--error)}
+.fp i.hint{background:repeating-linear-gradient(45deg,var(--accent) 0 3px,color-mix(in srgb,var(--accent) 34%,var(--bg)) 3px 6px)}
+.fp i.reveal{background:repeating-linear-gradient(45deg,var(--error) 0 3px,color-mix(in srgb,var(--error) 34%,var(--bg)) 3px 6px)}
+.fp i:nth-child(3n){border-right:1.5px solid var(--region-line)}
+.fp i:nth-child(9n){border-right:0}
+.fp i:nth-child(n+19):nth-child(-n+27),
+.fp i:nth-child(n+46):nth-child(-n+54){border-bottom:1.5px solid var(--region-line)}
+.run-stats{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center}
+.run-stats .col{display:grid;gap:18px}
+.run-head{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;margin-bottom:20px}
+.run-head .who{font-family:var(--font-display);font-weight:800;font-size:18px}
+.run-head .date{color:var(--label);font-size:13px}
+.difftag{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:700;text-transform:capitalize}
+.difftag span{color:var(--label);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.1em}
+
+/* ============================================================
+   7. Concept 2 — Radar
+   ============================================================ */
+.radar-wrap{display:grid;grid-template-columns:minmax(0,1fr) 232px;gap:26px;align-items:center}
+.radar{width:100%;max-width:420px;margin-inline:auto;display:block}
+.radar .grid-ring{fill:none;stroke:var(--grid-line);stroke-width:1}
+.radar .diff-ring{fill:none;stroke:var(--region-line);stroke-width:2.5}
+.radar .spoke{stroke:var(--grid-line);stroke-width:1}
+.radar .poly{stroke-width:2;stroke-linejoin:round}
+.radar .you{fill:color-mix(in srgb,var(--p1) 30%,transparent);stroke:var(--p1)}
+.radar .peer{fill:color-mix(in srgb,var(--c) 12%,transparent);stroke:var(--c);stroke-width:1.6;stroke-dasharray:3 3}
+.radar .axis{fill:var(--label);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;font-family:var(--font-body)}
+.radar .dot{fill:var(--p1);stroke:var(--bg);stroke-width:2}
+.radar-key{display:grid;gap:10px}
+.radar-key .row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;padding-bottom:8px;border-bottom:1px solid var(--grid-line)}
+.radar-key .who{display:inline-flex;align-items:center;gap:9px;font-weight:600}
+.radar-key .who .k{width:12px;height:12px;border-radius:50%}
+.radar-key .you{color:var(--text)}
+.radar-key .val{font-variant-numeric:tabular-nums;color:var(--label)}
+
+/* ============================================================
+   8. Concept 3 — Tracks
+   ============================================================ */
+.track-row{margin-bottom:22px}
+.track-top{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;justify-content:space-between;margin-bottom:9px}
+.track-top .name{font-size:14px;font-weight:700}
+.track-top .best{font-size:11.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--label)}
+.track-top .best em{font-style:normal;color:var(--text)}
+.track{position:relative;height:34px;border-radius:var(--r-pill);background:var(--track);border:1px solid var(--grid-line)}
+.track .goal{position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 16%,transparent));pointer-events:none}
+.track .mk{position:absolute;top:50%;translate:-50% -50%;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  font-size:10px;font-weight:800;font-family:var(--font-display);background:var(--c,var(--accent));color:var(--ink,var(--mk-ink));
+  border:2px solid var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.28);transition:left .6s cubic-bezier(.2,.7,.2,1)}
+.track .mk.p1{--ink:var(--accent-ink)}
+.track .mk.you{width:26px;height:26px;z-index:2}
+.track-scale{display:flex;justify-content:space-between;font-size:11px;color:var(--label);margin-top:6px;letter-spacing:0.03em}
+.track-note{font-size:12px;color:var(--label);margin-top:20px;padding-top:14px;border-top:1px solid var(--grid-line)}
+
+/* ============================================================
+   9. Concept 4 — Tape
+   ============================================================ */
+.receipt{font-family:var(--mono);background:var(--surface-soft);border:1px solid var(--grid-line);border-radius:var(--r-md);padding:20px 20px 18px;font-size:13px;line-height:1.5}
+.receipt .rtop{display:flex;justify-content:space-between;gap:12px;padding-bottom:12px;margin-bottom:14px;border-bottom:1px dashed var(--grid-line);font-weight:700}
+.receipt .rtop .d{color:var(--label);font-weight:500}
+.receipt .rline{display:grid;grid-template-columns:74px 54px 1fr;gap:10px;align-items:center;margin-bottom:9px}
+.receipt .rline .lab{color:var(--label);text-transform:uppercase;letter-spacing:0.06em;font-size:11px}
+.receipt .rline .val{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.receipt .rline .bar{display:flex;gap:3px}
+.receipt .rline .bar i{flex:1;height:12px;border-radius:2px;background:var(--grid-line)}
+.receipt .rline .bar i.f{background:var(--accent)}
+.receipt .rline .bar i.r{background:var(--error)}
+.receipt .rfoot{margin-top:14px;padding-top:13px;border-top:1px dashed var(--grid-line);display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700}
+.share-box{background:var(--surface-soft);border:1px solid var(--grid-line);border-radius:var(--r-md);overflow:hidden}
+.share-box .top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--grid-line)}
+.share-box .top .t{font-size:11.5px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:var(--label)}
+.copy{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:7px 15px;border-radius:var(--r-pill);background:var(--accent-ui);color:var(--on-accent);font-size:13px;font-weight:700}
+.copy:hover{filter:brightness(1.08)}
+.copy svg{width:15px;height:15px}
+.copy-text{margin:0;padding:18px 16px;font-family:var(--mono);font-size:13.5px;line-height:1.75;white-space:pre-wrap;word-break:break-word;color:var(--text)}
+.copy-text .dim{color:var(--label)}
+
+/* ============================================================
+   10. Concept 5 — Grid (comparison matrix)
+   ============================================================ */
+.matrix{width:100%;border-collapse:separate;border-spacing:3px;font-variant-numeric:tabular-nums}
+.matrix caption{text-align:left;color:var(--label);font-size:12.5px;padding-bottom:12px}
+.matrix th,.matrix td{padding:11px 12px;text-align:center;border-radius:var(--r-sm)}
+.matrix thead th{font-size:12px;font-weight:700;letter-spacing:0.04em;color:var(--text);background:var(--surface-soft);border:1px solid var(--grid-line)}
+.matrix thead th.you{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.matrix tbody th{text-align:left;font-size:12.5px;font-weight:700;color:var(--label);letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap}
+.matrix td{position:relative;font-family:var(--font-display);font-weight:800;font-size:17px;letter-spacing:-0.02em;
+  background:color-mix(in srgb,var(--accent) calc(var(--fill,0) * 1%),var(--surface-soft));border:1px solid var(--grid-line)}
+.matrix td.you{border-color:var(--accent)}
+.matrix td .star{position:absolute;top:5px;right:6px;width:12px;height:12px;color:var(--text)}
+.matrix td.win{background:color-mix(in srgb,var(--accent) 30%,var(--surface-soft))}
+.achievements{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--grid-line)}
+.ach{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;padding:7px 13px;border:1px solid var(--grid-line);border-radius:var(--r-pill);background:var(--surface-soft)}
+.ach svg{width:14px;height:14px;color:var(--accent)}
+.ach b{font-weight:700}
+
+/* ============================================================
+   11. Compact share tile — one consistent size so friends tile
+   ============================================================ */
+.tile{width:208px;background:var(--card);border:1px solid var(--grid-line);border-radius:var(--r-lg);padding:14px;display:grid;gap:12px;
+  box-shadow:0 1px 0 color-mix(in srgb,var(--text) 6%,transparent)}
+.tile .thead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tile .who{font-family:var(--font-display);font-weight:800;font-size:13px}
+.tile .tfoot{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--label);border-top:1px solid var(--grid-line);padding-top:10px}
+.tile .tfoot .time{font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.tile .mini-fp{display:grid;grid-template-columns:repeat(9,1fr);gap:1.5px;aspect-ratio:1;width:88px;margin-inline:auto}
+.tile .mini-fp i{display:block;border-radius:1px;background:var(--surface-soft)}
+.tile .mini-fp i.given{background:color-mix(in srgb,var(--region-line) 40%,var(--bg))}
+.tile .mini-fp i.correct{background:var(--accent)}
+.tile .mini-fp i.wrong{background:var(--error)}
+.tile .mini-fp i.hint{background:repeating-linear-gradient(45deg,var(--accent) 0 2px,transparent 2px 4px)}
+.tile .mini-fp i.reveal{background:repeating-linear-gradient(45deg,var(--error) 0 2px,transparent 2px 4px)}
+.tile svg.radar{width:108px;margin-inline:auto;display:block}
+.tile .mirco{display:grid;gap:7px;margin-top:2px}
+.tile .mirco .r{display:grid;grid-template-columns:1fr 34px;gap:8px;align-items:center;font-size:11px;color:var(--label)}
+.tile .mirco .r .b{height:6px;border-radius:3px;background:var(--track);overflow:hidden}
+.tile .mirco .r .b i{display:block;height:100%;border-radius:3px;background:var(--accent);width:calc(var(--v,0) * 1%)}
+.tile .mirco .r .b i.p2{background:var(--p2)}
+.tile .mini-pre{margin:0;font-family:var(--mono);font-size:11px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.tile .mini-list{display:grid;gap:8px}
+.tile .mini-list .r{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:baseline;font-size:12px;padding-bottom:7px;border-bottom:1px solid var(--grid-line)}
+.tile .mini-list .r:last-child{border-bottom:0;padding-bottom:0}
+.tile .mini-list .k{color:var(--label);text-transform:uppercase;font-size:10.5px;letter-spacing:0.06em}
+.tile .mini-list .v{font-family:var(--font-display);font-weight:800;font-variant-numeric:tabular-nums}
+.tile .mini-list .rk{font-size:10.5px;color:var(--label);font-weight:700}
+.tile .ring-num{width:74px;height:74px}
+.tile .ring-num .val{font-size:19px}
+.tile .ring circle{stroke-width:9}
+
+/* Grammar board */
+.grammar{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px}
+.gitem{display:grid;gap:11px;align-content:start}
+.gitem .demo{min-height:60px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.gitem h3{font-size:14px;letter-spacing:0.01em}
+.gitem p{font-size:13px;color:var(--label);line-height:1.55;max-width:34ch}
+
+/* Notes */
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:26px}
+.notes h3{font-size:14px;margin-bottom:9px}
+.notes p{font-size:13.5px;color:var(--label);max-width:44ch}
+.notes code{font-family:var(--mono);font-size:12.5px;color:var(--text);background:var(--surface-soft);padding:1px 6px;border-radius:5px;border:1px solid var(--grid-line)}
+
+/* Self test */
+.selftest{margin-top:22px;border:1px solid var(--grid-line);border-radius:var(--r-md);overflow:hidden;background:var(--surface-soft)}
+.selftest summary{cursor:pointer;padding:14px 18px;font-size:13.5px;font-weight:700;list-style:none;display:flex;align-items:center;gap:10px}
+.selftest summary::-webkit-details-marker{display:none}
+.selftest .badge{font-size:11px;font-weight:800;letter-spacing:0.06em;padding:3px 9px;border-radius:var(--r-pill);background:var(--accent-ui);color:var(--on-accent)}
+.selftest .badge.fail{background:var(--error);color:var(--bg)}
+.selftest ul{margin:0;padding:0 18px 16px;list-style:none;display:grid;gap:7px;font-family:var(--mono);font-size:12.5px}
+.selftest li{display:flex;gap:10px}
+.selftest .ok{color:var(--accent)}
+.selftest .no{color:var(--error)}
+
+.skip{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}
+.skip a{font-size:12.5px;font-weight:600;text-decoration:none;padding:8px 14px;border:1px solid var(--grid-line);border-radius:var(--r-pill);color:var(--label);background:var(--surface-soft)}
+.skip a:hover{color:var(--text);border-color:var(--accent)}
+
+/* ============================================================
+   12. Responsive
+   ============================================================ */
+@media (max-width:940px){
+  .stage,#concept-tape .stage{grid-template-columns:minmax(0,1fr)}
+  .side{grid-auto-flow:row}
+  .run-grid{grid-template-columns:minmax(0,1fr)}
+  .radar-wrap{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:620px){
+  .run-stats{grid-template-columns:1fr;gap:22px;justify-items:start}
+  .side{grid-auto-flow:row}
+  .tile{width:100%}
+  .matrix th,.matrix td{padding:9px 6px;font-size:14px}
+  .matrix thead th{font-size:11px}
+  .receipt .rline{grid-template-columns:62px 46px 1fr}
+}
+/* ============================================================
+   13. Blackboard — dark chalkboard skin.
+       A chalk-dust grain over the board, faint eraser smudges, and
+       half-erased chalk doodles scattered down the outer gutters.
+   ============================================================ */
+[data-skin="blackboard"] body{
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(1100px 640px at 12% 6%, rgba(255,255,255,.06), transparent 58%),
+    radial-gradient(820px 560px at 90% 94%, rgba(255,255,255,.05), transparent 60%),
+    linear-gradient(118deg, rgba(255,255,255,.03), transparent 44%),
+    var(--dust);
+  background-repeat:no-repeat,no-repeat,no-repeat,repeat;
+  background-size:auto,auto,auto,240px 240px;
+  background-attachment:fixed;
+}
+/* Handwriting wants no negative tracking — the tight display default is Latin-only. */
+[data-skin="blackboard"] h1,
+[data-skin="blackboard"] h2,
+[data-skin="blackboard"] h3,
+[data-skin="blackboard"] .brandline{letter-spacing:0}
+[data-skin="blackboard"] .card,
+[data-skin="blackboard"] .tile,
+[data-skin="blackboard"] .receipt,
+[data-skin="blackboard"] .share-box{
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 5%,transparent),
+             0 2px 0 color-mix(in srgb,var(--text) 6%,transparent);
+}
+
+.chalk-frame{position:fixed;inset:0;z-index:0;pointer-events:none;display:none;color:var(--text);
+  --gutter:max(0px, calc((100vw - 1140px) / 2))}
+[data-skin="blackboard"] .chalk-frame{display:block;animation:chalk-in .45s ease both}
+@keyframes chalk-in{from{opacity:0}to{opacity:1}}
+.chalk-frame .smudge{position:absolute;border-radius:50%;filter:blur(11px);opacity:.85;
+  background:radial-gradient(closest-side, rgba(255,255,255,.075), transparent 72%)}
+.chalk-frame .d{position:absolute;opacity:.3;rotate:var(--r,0deg);
+  width:min(var(--w,104px), calc(var(--gutter) - 24px));
+  color:color-mix(in srgb,var(--text) 74%,var(--bg))}
+/* Half-wiped doodles: the stroke fades out as if an eraser caught it. */
+.chalk-frame .d.fade{-webkit-mask-image:linear-gradient(104deg,#000 42%,transparent 86%);
+  mask-image:linear-gradient(104deg,#000 42%,transparent 86%)}
+.chalk-frame .d svg{display:block;width:100%;height:auto;overflow:visible}
+.chalk-frame .d path{fill:none;stroke:currentColor;stroke-width:5.5;
+  stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 .5px currentColor)}
+/* Doodles only live in the side gutters, so they can never sit behind content. */
+@media (max-width:1279px){[data-skin="blackboard"] .chalk-frame{display:none}}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+  .ring .fg,.track .mk{transition:none}
+}
+</style>
+</head>
+<body>
+<!-- Blackboard skin only: chalk-dust smudges and half-erased doodles in the
+     side gutters. Purely decorative, hidden on screens without room for them. -->
+<div class="chalk-frame" aria-hidden="true">
+  <span class="smudge" style="top:3%;left:-4%;width:26vw;height:30vh"></span>
+  <span class="smudge" style="bottom:2%;right:-3%;width:24vw;height:26vh;opacity:.66"></span>
+  <span class="smudge" style="top:48%;right:-6%;width:22vw;height:30vh;opacity:.5"></span>
+
+  <span class="d" style="top:4%;left:12px;--w:104px;--r:-7deg"><svg viewBox="0 0 100 100"><path d="M10 10H90M10 43H90M10 76H90M10 10V90M43 10V90M76 10V90M49 19l14 14M63 19l-14 14M52 55a7 7 0 1 1 14 0a7 7 0 1 1-14 0"/></svg></span>
+  <span class="d" style="top:20%;left:12px;--w:66px;--r:6deg;opacity:.26"><svg viewBox="0 0 100 100"><path d="M18 54L40 76L84 24"/></svg></span>
+  <span class="d" style="top:37%;left:12px;--w:80px;--r:-4deg"><svg viewBox="0 0 100 100"><path d="M50 12a26 26 0 0 1 15 47v7h-30v-7a26 26 0 0 1 15-47zM40 74h20M43 84h14"/></svg></span>
+  <span class="d fade" style="top:55%;left:12px;--w:96px;--r:11deg;opacity:.28"><svg viewBox="0 0 100 100"><path d="M52 50q-2-12-14-10q-14 3-10 18q5 20 26 16q26-5 22-32q-5-30-38-26q-36 4-34 40"/></svg></span>
+  <span class="d" style="top:72%;left:12px;--w:88px;--r:-6deg"><svg viewBox="0 0 100 100"><path d="M18 76h64l-6-36-18 14-8-22-8 22-18-14z"/></svg></span>
+  <span class="d fade" style="top:88%;left:12px;--w:70px;--r:8deg"><svg viewBox="0 0 100 100"><path d="M66 34a18 18 0 1 1-20 16M62 30 50 86"/></svg></span>
+
+  <span class="d" style="top:11%;right:12px;--w:82px;--r:9deg"><svg viewBox="0 0 100 100"><path d="M50 12 61 41 92 41 67 59 76 89 50 70 24 89 33 59 8 41 39 41Z"/></svg></span>
+  <span class="d" style="top:28%;right:12px;--w:96px;--r:4deg"><svg viewBox="0 0 100 100"><path d="M10 50q40-34 80 0q-40 34-80 0zM50 50a10 10 0 1 1 .01 0"/></svg></span>
+  <span class="d" style="top:46%;right:12px;--w:100px;--r:-8deg"><svg viewBox="0 0 100 100"><path d="M12 62q34 10 70-16M64 32l20 12-16 18"/></svg></span>
+  <span class="d fade" style="top:64%;right:12px;--w:78px;--r:5deg;opacity:.3"><svg viewBox="0 0 100 100"><path d="M24 20v60M40 16v60M56 22v60M12 40l56 12"/></svg></span>
+  <span class="d fade" style="top:82%;right:12px;--w:72px;--r:-5deg"><svg viewBox="0 0 100 100"><path d="M34 26q26-8 26 10q0 14-20 16q20 2 20 16q0 18-28 10"/></svg></span>
+</div>
+<div class="shell">
+
+  <header class="masthead" data-od-id="masthead">
+    <div>
+      <p class="eyebrow">Result display · five encodings</p>
+      <h1 class="brandline" data-od-id="page-title"><span>*</span>doku results</h1>
+      <p class="lede">One result, five ways to show it. Every version carries the same four
+        dimensions — active time, first-entry accuracy, hints, and answer checks — plus the
+        difficulty it was played at. Each one collapses into a small tile that can sit next
+        to a friend’s, and all of them read their colors from the player’s active skin.</p>
+      <nav class="skip" aria-label="Jump to a concept">
+        <a href="#concept-run">01 Run</a>
+        <a href="#concept-radar">02 Radar</a>
+        <a href="#concept-tracks">03 Tracks</a>
+        <a href="#concept-tape">04 Tape</a>
+        <a href="#concept-grid">05 Grid</a>
+      </nav>
+    </div>
+    <div class="toolbar" data-od-id="theme-controls">
+      <div class="field">
+        <span class="lbl" id="theme-lbl">Theme</span>
+        <div class="seg" role="radiogroup" aria-labelledby="theme-lbl">
+          <label><input type="radio" name="scheme" value="light" data-od-id="theme-light" /><span>Light</span></label>
+          <label><input type="radio" name="scheme" value="dark" checked data-od-id="theme-dark" /><span>Dark</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <span class="lbl" id="skin-lbl">Game skin</span>
+        <div class="chips" role="radiogroup" aria-labelledby="skin-lbl" id="skin-chips"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== GRAMMAR ========== -->
+  <section class="section" aria-labelledby="grammar-h" data-od-id="section-grammar">
+    <div class="section-head">
+      <div>
+        <h2 id="grammar-h">The shared result grammar</h2>
+        <p class="bet">Whatever the layout, these five atoms mean the same thing. Difficulty is
+          always spelled out — never color alone — and assistance is always a separate seal,
+          never folded into accuracy.</p>
+      </div>
+      <span class="idx">00 — GRAMMAR</span>
+    </div>
+    <div class="card grammar" data-od-id="grammar-board">
+      <div class="gitem" data-od-id="grammar-difficulty">
+        <h3>Difficulty</h3>
+        <div class="demo" id="g-difficulty"></div>
+        <p>Three named steps, easy to hard. It stamps the result and sets the only fair basis
+          for comparing speed.</p>
+      </div>
+      <div class="gitem" data-od-id="grammar-accuracy">
+        <h3>First-entry accuracy</h3>
+        <div class="demo" id="g-accuracy"></div>
+        <p>The ring fills with the percentage of your first pen entries that were right.
+          Givens, notes, erasures and revealed squares are excluded.</p>
+      </div>
+      <div class="gitem" data-od-id="grammar-hints">
+        <h3>Hints &amp; checks</h3>
+        <div class="demo" id="g-hints"></div>
+        <p>Counted independently as pips plus a number. Lower is calmer, but it is never a
+          penalty to your accuracy.</p>
+      </div>
+      <div class="gitem" data-od-id="grammar-assistance">
+        <h3>Assistance seal</h3>
+        <div class="demo" id="g-assist"></div>
+        <p>Solid means unassisted. Outlined means a hint, reveal, check or note-autofill was
+          used — recorded even if it was turned off before the end.</p>
+      </div>
+      <div class="gitem" data-od-id="grammar-context">
+        <h3>Context line</h3>
+        <div class="demo"><span class="run-head" style="margin:0"><span class="who">sudoku</span>
+          <span class="difftag"><span>level</span><span class="steps" role="img" aria-label="Difficulty: easy, 1 of 3"><i class="on"></i><i></i><i></i></span> easy</span>
+          <span class="date">Sep 26</span></span></div>
+        <p>Variant, level, and date travel with every result so a slow, clean solve is never
+          read as the same thing as a fast, assisted one.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 01 RUN ========== -->
+  <section class="section" id="concept-run" aria-labelledby="run-h" data-od-id="section-run">
+    <div class="section-head">
+      <div>
+        <h2 id="run-h">Run — your board, as the chart</h2>
+        <p class="bet">The most distinctive bet: the result <em>is</em> an 81-cell fingerprint
+          of how the puzzle was solved. Givens, first-entry hits, hints and reveals each get
+          their own mark, so the shape of the solve is visible, not just its totals.</p>
+      </div>
+      <span class="idx">01 — RUN</span>
+    </div>
+    <div class="stage">
+      <div class="side">
+        <div class="cap">Full result</div>
+        <div class="card" id="run-card" data-od-id="run-card"></div>
+        <div class="legend" id="run-legend" aria-label="Fingerprint legend"></div>
+        <div class="cap" style="margin-top:18px">Same encoding, an assisted solve</div>
+        <div class="card" id="run-sample" data-od-id="run-sample"></div>
+      </div>
+      <div class="side">
+        <div class="cap">Share tile</div>
+        <div id="run-tile"></div>
+      </div>
+    </div>
+    <p class="reads"><b>Reads as:</b> a dense, satisfying stamp of the whole solve. Best for the
+      player’s own result screen and for a screenshot that says “this is how it went.”</p>
+  </section>
+
+  <!-- ========== 02 RADAR ========== -->
+  <section class="section" id="concept-radar" aria-labelledby="radar-h" data-od-id="section-radar">
+    <div class="section-head">
+      <div>
+        <h2 id="radar-h">Radar — your shape against theirs</h2>
+        <p class="bet">Four axes, one silhouette. Speed, accuracy, independence and focus form
+          a polygon you can overlay on a friend’s in a glance. The three guide rings are the
+          difficulty levels; the ring matching this puzzle is drawn heavier.</p>
+      </div>
+      <span class="idx">02 — RADAR</span>
+    </div>
+    <div class="stage">
+      <div class="side">
+        <div class="cap">Full result</div>
+        <div class="card radar-wrap" data-od-id="radar-card">
+          <div id="radar-svg"></div>
+          <div class="radar-key" id="radar-key"></div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="cap">Share tile</div>
+        <div id="radar-tile"></div>
+      </div>
+    </div>
+    <p class="reads"><b>Reads as:</b> personality. Two players with the same time get visibly
+      different shapes. The speed axis only appears when there is more than one result to
+      scale against — a lone solve has no reference time.</p>
+  </section>
+
+  <!-- ========== 03 TRACKS ========== -->
+  <section class="section" id="concept-tracks" aria-labelledby="tracks-h" data-od-id="section-tracks">
+    <div class="section-head">
+      <div>
+        <h2 id="tracks-h">Tracks — everyone on the same scale</h2>
+        <p class="bet">The comparison-native layout. Each dimension is a track; every player is
+          a marker normalised so that <em>better is always to the right</em>. Ties are allowed,
+          and no single number decides who “won.”</p>
+      </div>
+      <span class="idx">03 — TRACKS</span>
+    </div>
+    <div class="stage">
+      <div class="side">
+        <div class="cap">Full result · sample group</div>
+        <div class="card" id="tracks-card" data-od-id="tracks-card"></div>
+      </div>
+      <div class="side">
+        <div class="cap">Share tile</div>
+        <div id="tracks-tile"></div>
+      </div>
+    </div>
+    <p class="reads"><b>Reads as:</b> fairness. A slower, spotless solve still sits far right on
+      accuracy, independence and focus, so no one’s strength disappears.</p>
+  </section>
+
+  <!-- ========== 04 TAPE ========== -->
+  <section class="section" id="concept-tape" aria-labelledby="tape-h" data-od-id="section-tape">
+    <div class="section-head">
+      <div>
+        <h2 id="tape-h">Tape — the shareable line</h2>
+        <p class="bet">The Wordle successor: a fixed-width, spoiler-free line that survives being
+          pasted into any chat. Two lines, four real dimensions, comparable at a glance — and
+          it still works when the recipient is on a different theme.</p>
+      </div>
+      <span class="idx">04 — TAPE</span>
+    </div>
+    <div class="stage">
+      <div class="side">
+        <div class="cap">Rendered receipt</div>
+        <div class="card" id="tape-card" data-od-id="tape-card"></div>
+      </div>
+      <div class="side" style="width:100%">
+        <div class="cap">Shared as text</div>
+        <div id="tape-share"></div>
+      </div>
+    </div>
+    <p class="reads"><b>Reads as:</b> a claim you can drop in a group chat. No grid to decode,
+      no answer leaked, and every line lines up because it is monospaced.</p>
+  </section>
+
+  <!-- ========== 05 GRID ========== -->
+  <section class="section" id="concept-grid" aria-labelledby="grid-h" data-od-id="section-grid">
+    <div class="section-head">
+      <div>
+        <h2 id="grid-h">Grid — the scorecard</h2>
+        <p class="bet">A matrix of players against dimensions. Fill intensity shows relative
+          quality within each row, a star marks the row best, and ties produce more than one
+          star. Achievements are named underneath so several people can leave a winner.</p>
+      </div>
+      <span class="idx">05 — GRID</span>
+    </div>
+    <div class="stage">
+      <div class="side">
+        <div class="cap">Full result · sample group</div>
+        <div class="card" id="grid-card" data-od-id="grid-card"></div>
+      </div>
+      <div class="side">
+        <div class="cap">Share tile</div>
+        <div id="grid-tile"></div>
+      </div>
+    </div>
+    <p class="reads"><b>Reads as:</b> a results table for a small group — the clearest of the
+      five when three or four people played the same level.</p>
+  </section>
+
+  <!-- ========== NOTES ========== -->
+  <section class="section" aria-labelledby="notes-h" data-od-id="section-notes">
+    <div class="section-head">
+      <div><h2 id="notes-h">How these behave</h2></div>
+      <span class="idx">NOTES</span>
+    </div>
+    <div class="notes">
+      <div data-od-id="note-theme">
+        <h3>Theme-proof by construction</h3>
+        <p>Every surface reads the game’s own tokens — <code>--bg</code>, <code>--surface</code>,
+          <code>--text</code>, <code>--muted</code>, <code>--accent</code>, <code>--grid-line</code>.
+          Switch the skin control at the top; nothing is hard-coded to one theme.</p>
+      </div>
+      <div data-od-id="note-honest">
+        <h3>No invented scores</h3>
+        <p>Tracks and Radar normalise only within the results actually on screen, and say so.
+          There is no fabricated “par” time and no hidden weighted total. If a combined index is
+          ever added, its formula belongs on the card.</p>
+      </div>
+      <div data-od-id="note-difficulty">
+        <h3>Difficulty stays honest</h3>
+        <p>Speed is only comparable inside a level, so every layout labels the level and never
+          implies that an easy solve equals a hard one. Achievements are recognised across
+          levels instead of forcing a false equivalence.</p>
+      </div>
+      <div data-od-id="note-access">
+        <h3>Accessibility is part of the design</h3>
+        <p>Color is never the only channel: difficulty is text plus steps, counts are always
+          printed as numbers, and each chart exposes a text alternative. Motion respects
+          reduced-motion, and every control is a native, keyboard-focusable input.</p>
+      </div>
+    </div>
+    <details class="selftest" id="selftest" data-od-id="selftest">
+      <summary>Encoding self-tests <span class="badge" id="st-badge">…</span></summary>
+      <ul id="st-list"></ul>
+    </details>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   A. Data — the clean run is the real result from the owner's
+      screenshot (02:49, 100%, 0 hints, 0 checks, easy). Rivals
+      are clearly-labelled sample data for the comparison demos.
+   ============================================================ */
+const LEVELS = ["easy", "medium", "hard"];
+
+const RUN = {
+  id: "you", name: "You", variant: "sudoku", difficulty: "easy", date: "Sep 26",
+  seconds: 169, accuracy: 100, evaluated: 38,
+  hints: 0, checks: 0, reveals: 0, autofills: 0, assisted: false,
+  cats: { given: 43, correct: 38, wrong: 0, hint: 0, reveal: 0 },
+};
+
+/* An assisted run, shown so the fingerprint encoding can be judged
+   with hints, reveals and wrong first entries present. */
+const RUN_ASSISTED = {
+  id: "sample", name: "Sample run", variant: "huedoku", difficulty: "medium", date: "Sep 26",
+  seconds: 402, accuracy: 78, evaluated: 50,
+  hints: 5, checks: 2, reveals: 2, autofills: 1, assisted: true,
+  cats: { given: 29, correct: 39, wrong: 6, hint: 5, reveal: 2 },
+};
+
+/* Sample four-player group, same level so speed is comparable. */
+const GROUP = [
+  RUN,
+  { id: "mira", name: "Mira", variant: "sudoku", difficulty: "easy", date: "Sep 26",
+    seconds: 151, accuracy: 92, evaluated: 41, hints: 1, checks: 0, reveals: 0, autofills: 0, assisted: true },
+  { id: "devon", name: "Devon", variant: "sudoku", difficulty: "easy", date: "Sep 26",
+    seconds: 238, accuracy: 100, evaluated: 40, hints: 0, checks: 0, reveals: 0, autofills: 0, assisted: false },
+  { id: "priya", name: "Priya", variant: "sudoku", difficulty: "easy", date: "Sep 26",
+    seconds: 312, accuracy: 97, evaluated: 37, hints: 0, checks: 2, reveals: 0, autofills: 0, assisted: true },
+];
+const RIVALS = GROUP.slice(1);
+
+const PLAYER_COLOR = ["--p1", "--p2", "--p3", "--p4"];
+
+/* ============================================================
+   B. Pure encoders — the only place a value becomes a visual.
+      Kept side-effect free so the self-tests can assert on them.
+   ============================================================ */
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const fmtTime = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+const levelIndex = (d) => Math.max(0, LEVELS.indexOf(d));
+const quality = {
+  accuracy: (a) => (a == null ? 0 : clamp(Math.round(a), 0, 100)),
+  accuracyRingOffset: (a, r = 42) => (a == null ? 2 * Math.PI * r : 2 * Math.PI * r * (1 - clamp(a, 0, 100) / 100)),
+  uses: (n, cap = 5) => Math.round(100 * (1 - clamp(n, 0, cap) / cap)),
+  speed: (seconds, group) => {
+    if (group.length < 2) return null;
+    const ts = group.map((p) => p.seconds);
+    const min = Math.min(...ts), max = Math.max(...ts);
+    return max === min ? 100 : Math.round(100 * (max - seconds) / (max - min));
+  },
+};
+/* Deterministic fingerprint: exact category counts (real), scattered with a
+   seeded shuffle so it reads like a board rather than a stripe. */
+function fingerprint(cats) {
+  const cells = [];
+  for (const kind of ["given", "correct", "wrong", "hint", "reveal"]) {
+    for (let i = 0; i < (cats[kind] || 0); i++) cells.push(kind);
+  }
+  while (cells.length < 81) cells.push("blank");
+  let seed = 20260926;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  for (let i = cells.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [cells[i], cells[j]] = [cells[j], cells[i]];
+  }
+  return cells;
+}
+const bar = (n, total = 10) => "█".repeat(clamp(Math.round(n), 0, total)) + "░".repeat(total - clamp(Math.round(n), 0, total));
+function shareText(run) {
+  const acc = run.accuracy == null ? "—" : `${run.accuracy}%`;
+  const state = run.assisted ? "assisted" : "unassisted";
+  return `*doku · ${run.variant} · ${run.difficulty} · ${fmtTime(run.seconds)}\n` +
+    `${bar(run.accuracy == null ? 0 : run.accuracy / 10)} ${acc} · hints ${run.hints} · checks ${run.checks} · ${state}`;
+}
+
+/* ============================================================
+   C. Shared atom renderers (DRY across all five concepts)
+   ============================================================ */
+const steps = (d, lg = false) => {
+  const n = levelIndex(d) + 1;
+  return `<span class="steps${lg ? " lg" : ""}" role="img" aria-label="Difficulty: ${d}, ${n} of 3">` +
+    [0, 1, 2].map((i) => `<i${i < n ? ' class="on"' : ""}></i>`).join("") + `</span>`;
+};
+const ring = (pct, label = "First-entry accuracy") => {
+  const off = quality.accuracyRingOffset(pct).toFixed(1);
+  return `<div class="ring-num" role="img" aria-label="${label}: ${pct == null ? "not measured" : pct + "%"}">
+    <svg class="ring" viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+      <circle class="bg" cx="50" cy="50" r="42"></circle>
+      <circle class="fg" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="${off}"></circle>
+    </svg><span class="val num">${pct == null ? "—" : pct + "%"}</span></div>`;
+};
+const pips = (n, cap = 5) => `<span class="pips" role="img" aria-label="${n} used">` +
+  Array.from({ length: cap }, (_, i) => `<i${i < Math.min(n, cap) ? ' class="on"' : ""}></i>`).join("") +
+  `<b>${n}</b></span>`;
+const seal = (assisted) => assisted
+  ? `<span class="seal sealed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Assisted</span>`
+  : `<span class="seal clean"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>Unassisted</span>`;
+const contextLine = (run) =>
+  `<span class="who">${run.variant}</span> <span class="difftag"><span>level</span>${steps(run.difficulty)} ${run.difficulty}</span> <span class="date">${run.date}</span>`;
+const srSummary = (run) => `<span class="sr-only">${run.name}: ${run.variant}, ${run.difficulty}, ${fmtTime(run.seconds)} active time, ` +
+  `first-entry accuracy ${run.accuracy == null ? "not measured" : run.accuracy + " percent"}, ${run.hints} hints, ${run.checks} answer checks, ` +
+  `${run.assisted ? "assisted" : "unassisted"}.</span>`;
+
+/* ============================================================
+   D. Concept renderers
+   ============================================================ */
+const fingerprintHTML = (cats, cls = "fp") =>
+  `<div class="${cls}" aria-hidden="true">${fingerprint(cats).map((c) => `<i class="${c}"></i>`).join("")}</div>`;
+function renderRun() {
+  const r = RUN;
+  document.getElementById("run-card").innerHTML = `
+    <div class="run-head"><span class="who">${r.name}</span>${contextLine(r)}</div>
+    <div class="run-grid">
+      ${fingerprintHTML(r.cats)}
+      <div class="run-stats">
+        <div class="col">${ring(r.accuracy)}</div>
+        <div class="col">
+          <div class="metric"><span class="k">Active time</span><span class="v num">${fmtTime(r.seconds)}</span>
+            <span class="sub">${r.evaluated} squares evaluated</span></div>
+          <div class="metric"><span class="k">Hints</span>${pips(r.hints)}</div>
+          <div class="metric"><span class="k">Answer checks</span>${pips(r.checks)}</div>
+          <div>${seal(r.assisted)}</div>
+        </div>
+      </div>
+    </div>
+    ${srSummary(r)}`;
+
+  const s = RUN_ASSISTED;
+  document.getElementById("run-sample").innerHTML = `
+    <div class="run-head"><span class="who">${s.name}</span>${contextLine(s)}</div>
+    <div class="run-grid">
+      ${fingerprintHTML(s.cats)}
+      <div class="run-stats">
+        <div class="col">${ring(s.accuracy)}</div>
+        <div class="col">
+          <div class="metric"><span class="k">Active time</span><span class="v num">${fmtTime(s.seconds)}</span>
+            <span class="sub">${s.hints} hints · ${s.reveals} reveals · ${s.checks} checks</span></div>
+          <div>${seal(s.assisted)}</div>
+        </div>
+      </div>
+    </div>
+    ${srSummary(s)}`;
+
+  document.getElementById("run-legend").innerHTML = [
+    ["given", "Given"],
+    ["correct", "First entry — right"],
+    ["wrong", "First entry — wrong"],
+    ["hint", "Hint used"],
+    ["reveal", "Revealed"],
+    ["blank", "Not evaluated"],
+  ].map(([c, t]) => `<span class="item"><span class="sw ${c}"></span>${t}</span>`).join("");
+
+  document.getElementById("run-tile").innerHTML = `
+    <article class="tile" data-od-id="run-tile">
+      <div class="thead"><span class="who">You</span>${steps(RUN.difficulty)}</div>
+      ${fingerprintHTML(RUN.cats, "mini-fp")}
+      <div class="tfoot"><span class="time num">${fmtTime(RUN.seconds)}</span><span>${RUN.accuracy}% · ${RUN.hints}h ${RUN.checks}c</span></div>
+      ${srSummary(RUN)}
+    </article>`;
+}
+
+const AXES = {
+  speed: { key: "speed", label: "Speed", get: (p, g) => quality.speed(p.seconds, g) },
+  accuracy: { key: "accuracy", label: "Accuracy", get: (p) => quality.accuracy(p.accuracy) },
+  independence: { key: "independence", label: "Independence", get: (p) => quality.uses(p.hints) },
+  focus: { key: "focus", label: "Focus", get: (p) => quality.uses(p.checks) },
+};
+function radarAxes(group) {
+  const order = ["speed", "accuracy", "independence", "focus"];
+  const used = group.length < 2 ? order.filter((k) => k !== "speed") : order;
+  return used.map((k) => AXES[k]);
+}
+function polar(cx, cy, r, i, n) {
+  const a = (-90 + (360 / n) * i) * Math.PI / 180;
+  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+}
+function radarSVG(group, highlight = group[0], compact = false) {
+  const S = 200, c = 100, maxR = 74, axes = radarAxes(group), n = axes.length;
+  const diffIdx = levelIndex(highlight.difficulty);
+  let svg = `<svg class="radar" viewBox="0 0 ${S} ${S}" role="img" aria-label="Skill shape for ${highlight.name}. ` +
+    axes.map((a) => { const v = a.get(highlight, group); return `${a.label} ${v == null ? "not scored" : v + " of 100"}`; }).join(", ") +
+    `.">`;
+  [0.33, 0.66, 1].forEach((f, i) => {
+    const pts = Array.from({ length: n }, (_, k) => polar(c, c, maxR * f, k, n).join(",")).join(" ");
+    svg += `<polygon class="${i === diffIdx ? "diff-ring" : "grid-ring"}" points="${pts}"></polygon>`;
+  });
+  for (let i = 0; i < n; i++) {
+    const [x, y] = polar(c, c, maxR, i, n);
+    svg += `<line class="spoke" x1="${c}" y1="${c}" x2="${x}" y2="${y}"></line>`;
+  }
+  if (!compact) {
+    axes.forEach((a, i) => {
+      const [x, y] = polar(c, c, maxR + 18, i, n);
+      svg += `<text class="axis" x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle">${a.label}</text>`;
+    });
+  }
+  const poly = (p, cls, colorVar) => {
+    const pts = axes.map((a, i) => {
+      const v = clamp(a.get(p, group) ?? 0, 0, 100);
+      return polar(c, c, maxR * v / 100, i, n).join(",");
+    }).join(" ");
+    const style = colorVar ? ` style="--c:var(${colorVar})"` : "";
+    return `<polygon class="${cls}" points="${pts}"${style}></polygon>`;
+  };
+  group.forEach((p, i) => { if (p !== highlight) svg += poly(p, "peer", PLAYER_COLOR[i % 4]); });
+  svg += poly(highlight, "you");
+  axes.forEach((a, i) => {
+    const v = clamp(a.get(highlight, group) ?? 0, 0, 100);
+    const [x, y] = polar(c, c, maxR * v / 100, i, n);
+    svg += `<circle class="dot" cx="${x}" cy="${y}" r="3.5"></circle>`;
+  });
+  return svg + "</svg>";
+}
+function renderRadar() {
+  document.getElementById("radar-svg").innerHTML = radarSVG(GROUP, RUN, false);
+  const q = {
+    Speed: quality.speed(RUN.seconds, GROUP),
+    Accuracy: quality.accuracy(RUN.accuracy),
+    Independence: quality.uses(RUN.hints),
+    Focus: quality.uses(RUN.checks),
+  };
+  document.getElementById("radar-key").innerHTML =
+    Object.entries(q).map(([k, v]) => `<div class="row"><span class="who">${k}</span><span class="val num">${v == null ? "—" : v}</span></div>`).join("") +
+    `<div class="row"><span class="who">Rivals</span><span class="val">${GROUP.length - 1} overlaid</span></div>` +
+    `<p style="font-size:12px;color:var(--label);margin:0">Axes are 0–100. Hints and checks score against a 5-use ceiling; speed is normalised to the fastest and slowest result shown. A lone solve drops the speed axis.</p>`;
+  document.getElementById("radar-tile").innerHTML = `
+    <article class="tile" data-od-id="radar-tile">
+      <div class="thead"><span class="who">You</span>${steps(RUN.difficulty)}</div>
+      ${radarSVG(GROUP, RUN, true)}
+      <div class="tfoot"><span class="time num">${fmtTime(RUN.seconds)}</span><span>${RUN.accuracy}% · ${RUN.assisted ? "assisted" : "unassisted"}</span></div>
+      ${srSummary(RUN)}
+    </article>`;
+}
+
+const DIMENSIONS = [
+  { key: "speed", label: "Active time", display: (p) => fmtTime(p.seconds), get: (p, g) => quality.speed(p.seconds, g), betterLabel: "fastest" },
+  { key: "accuracy", label: "First-entry accuracy", display: (p) => (p.accuracy == null ? "—" : p.accuracy + "%"), get: (p) => quality.accuracy(p.accuracy), betterLabel: "sharpest" },
+  { key: "hints", label: "Hints", display: (p) => String(p.hints), get: (p) => quality.uses(p.hints), betterLabel: "fewest" },
+  { key: "checks", label: "Answer checks", display: (p) => String(p.checks), get: (p) => quality.uses(p.checks), betterLabel: "fewest" },
+];
+const rowWinners = (dim, group) => {
+  const vals = group.map((p) => dim.get(p, group) ?? 0);
+  const best = Math.max(...vals);
+  return group.filter((p, i) => vals[i] === best).map((p) => p.id);
+};
+function renderTracks() {
+  let html = `<div class="run-head"><span class="who">Compared at easy</span>
+    <span class="difftag"><span>level</span>${steps("easy", true)} easy</span>
+    <span class="date">${GROUP.length} players · sample group</span></div>`;
+  DIMENSIONS.forEach((dim) => {
+    const winners = rowWinners(dim, GROUP);
+    const names = winners.map((id) => GROUP.find((p) => p.id === id).name).join(" & ");
+    html += `<div class="track-row">
+      <div class="track-top"><span class="name">${dim.label}</span>
+        <span class="best">best: <em>${names}</em> · ${dim.betterLabel} →</span></div>
+      <div class="track" role="img" aria-label="${dim.label} track. ${GROUP.map((p) => `${p.name} ${dim.display(p)}`).join("; ")}.">
+        <span class="goal"></span>
+        ${GROUP.map((p, i) => {
+          const v = clamp(dim.get(p, GROUP) ?? 0, 2, 98);
+          const col = PLAYER_COLOR[i % 4];
+          return `<span class="mk${p.id === "you" ? " you p1" : ""}" style="left:${v}%;--c:var(${col})" title="${p.name}: ${dim.display(p)}">${p.name[0]}</span>`;
+        }).join("")}
+      </div>
+      <div class="track-scale"><span>harder to compare</span><span>better →</span></div>
+    </div>`;
+  });
+  html += `<p class="track-note">Every track is normalised so the strongest result sits to the right.
+    Time is scaled to the fastest and slowest here; hints and checks against a 5-use ceiling — both
+    stated on the card rather than hidden. Played at different levels, the time track is withheld and
+    only accuracy, independence and focus are shown.</p>`;
+  document.getElementById("tracks-card").innerHTML = html;
+
+  document.getElementById("tracks-tile").innerHTML = `
+    <article class="tile" data-od-id="tracks-tile">
+      <div class="thead"><span class="who">You</span>${steps(RUN.difficulty)}</div>
+      <div class="mirco">
+        ${DIMENSIONS.map((dim) => {
+          const v = clamp(dim.get(RUN, GROUP) ?? 0, 0, 100);
+          return `<div class="r"><span><b style="color:var(--text)">${dim.label.replace("First-entry ", "")}</b> ${dim.display(RUN)}</span>
+            <span class="b"><i style="--v:${v}"></i></span></div>`;
+        }).join("")}
+      </div>
+      <div class="tfoot"><span class="time num">${fmtTime(RUN.seconds)}</span><span>easy · ${RUN.assisted ? "assisted" : "unassisted"}</span></div>
+      ${srSummary(RUN)}
+    </article>`;
+}
+
+function renderTape() {
+  document.getElementById("tape-card").innerHTML = `
+    <div class="receipt" data-od-id="tape-receipt">
+      <div class="rtop"><span>*doku · ${RUN.variant}</span><span class="d">${RUN.difficulty} · ${RUN.date}</span></div>
+      <div class="rline"><span class="lab">Time</span><span class="val num">${fmtTime(RUN.seconds)}</span>
+        <span class="bar" aria-hidden="true">${Array.from({length:10},()=>`<i class="f"></i>`).join("")}</span></div>
+      <div class="rline"><span class="lab">Accuracy</span><span class="val num">${RUN.accuracy}%</span>
+        <span class="bar" role="img" aria-label="Accuracy 100 percent">${Array.from({length:10},()=>`<i class="f"></i>`).join("")}</span></div>
+      <div class="rline"><span class="lab">Hints</span><span class="val num">${RUN.hints}</span>
+        <span class="bar" role="img" aria-label="No hints used">${Array.from({length:10},()=>`<i></i>`).join("")}</span></div>
+      <div class="rline"><span class="lab">Checks</span><span class="val num">${RUN.checks}</span>
+        <span class="bar" role="img" aria-label="No answer checks">${Array.from({length:10},()=>`<i></i>`).join("")}</span></div>
+      <div class="rfoot"><span>${steps(RUN.difficulty, true)} easy</span>${seal(RUN.assisted)}</div>
+    </div>`;
+
+  const text = shareText(RUN);
+  document.getElementById("tape-share").innerHTML = `
+    <div class="share-box" data-od-id="tape-share-box">
+      <div class="top"><span class="t">Copy-paste version</span>
+        <button class="copy" id="copy-btn" data-od-id="copy-result">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <span id="copy-label">Copy</span></button></div>
+      <pre class="copy-text" id="copy-text">${text.replace(/·/g, '<span class="dim">·</span>')}</pre>
+      <p class="sr-only" id="copy-live" aria-live="polite"></p>
+    </div>`;
+  document.getElementById("copy-btn").addEventListener("click", async () => {
+    const live = document.getElementById("copy-live");
+    const label = document.getElementById("copy-label");
+    try {
+      await navigator.clipboard.writeText(shareText(RUN));
+      live.textContent = "Result copied to clipboard.";
+      label.textContent = "Copied";
+    } catch {
+      live.textContent = "Copy blocked — select the text above to copy it.";
+      label.textContent = "Select to copy";
+    }
+    setTimeout(() => { label.textContent = "Copy"; }, 1800);
+  });
+
+  document.getElementById("tape-share").insertAdjacentHTML("beforeend", `
+    <div class="side" style="margin-top:14px">
+      <div class="cap">Share tile</div>
+      <article class="tile" data-od-id="tape-tile">
+        <div class="thead"><span class="who">You</span>${steps(RUN.difficulty)}</div>
+        <pre class="mini-pre">*doku · ${RUN.variant} · ${RUN.difficulty}
+${bar(10)} ${RUN.accuracy}%
+hints ${RUN.hints} · checks ${RUN.checks}
+${RUN.assisted ? "assisted" : "unassisted"}</pre>
+        ${srSummary(RUN)}
+      </article>
+    </div>`);
+}
+
+const STAR = `<svg class="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6L12 16.9 6.6 19.6l1.2-6L3.3 9.4l6.1-.8z"/></svg>`;
+function renderGrid() {
+  const rows = DIMENSIONS.map((dim) => {
+    const winners = rowWinners(dim, GROUP);
+    return `<tr><th scope="row">${dim.label}</th>${GROUP.map((p) => {
+      const v = clamp(dim.get(p, GROUP) ?? 0, 0, 100);
+      const win = winners.includes(p.id);
+      return `<td class="${p.id === "you" ? "you " : ""}${win ? "win" : ""}" style="--fill:${Math.round(v * 0.34)}"
+        >${dim.display(p)}${win ? STAR : ""}<span class="sr-only">${win ? ", best in row" : ""}</span></td>`;
+    }).join("")}</tr>`;
+  }).join("");
+  const achievements = [
+    ["Fastest solve", "Mira", "clock"],
+    ["Sharpest solve", "You & Devon", "target"],
+    ["Unassisted finish", "You & Devon", "check"],
+  ];
+  const icon = (k) => k === "clock"
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`
+    : k === "target"
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m5 13 4 4L19 7"/></svg>`;
+
+  document.getElementById("grid-card").innerHTML = `
+    <table class="matrix" data-od-id="grid-matrix">
+      <caption>Sample group · all played <b style="color:var(--text)">easy</b> — speed is compared only within a level.</caption>
+      <thead><tr><th scope="col">Dimension</th>${GROUP.map((p) => `<th scope="col" class="${p.id === "you" ? "you" : ""}">${p.name}</th>`).join("")}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="achievements" aria-label="Category achievements">
+      ${achievements.map(([t, who, k]) => `<span class="ach">${icon(k)}<span><b>${t}</b> · ${who}</span></span>`).join("")}
+    </div>
+    <p style="font-size:12.5px;color:var(--label);margin-top:16px">Fill intensity is relative to the strongest result in each row. Stars mark row bests, and ties produce more than one — so a slower, spotless solve still takes its categories. Sample data shown.</p>`;
+
+  const rankFor = (dim) => {
+    const v = clamp(dim.get(RUN, GROUP) ?? 0, 0, 100);
+    const all = GROUP.map((p) => clamp(dim.get(p, GROUP) ?? 0, 0, 100)).sort((a, b) => b - a);
+    return all.indexOf(v) + 1;
+  };
+  document.getElementById("grid-tile").innerHTML = `
+    <article class="tile" data-od-id="grid-tile">
+      <div class="thead"><span class="who">You</span>${steps(RUN.difficulty)}</div>
+      <div class="mini-list">
+        ${DIMENSIONS.map((dim) => {
+          const rank = rankFor(dim);
+          return `<div class="r"><span class="k">${dim.label.replace("First-entry ", "")}</span>
+            <span class="v">${dim.display(RUN)}</span><span class="rk">#${rank}/${GROUP.length}</span></div>`;
+        }).join("")}
+      </div>
+      ${srSummary(RUN)}
+    </article>`;
+}
+
+/* ============================================================
+   E. Theme + skin controls
+   ============================================================ */
+const SKINS = [
+  { id: "night", label: "Night", scheme: "dark", bg: "#0d1928", accent: "#9bf0c4" },
+  { id: "glass", label: "Glass", scheme: "dark", bg: "#101a36", accent: "#75eff4" },
+  { id: "plum", label: "Plum", scheme: "dark", bg: "#181023", accent: "#ecc0f7" },
+  { id: "retro", label: "Retro", scheme: "dark", bg: "#173252", accent: "#ff6b3d" },
+  { id: "contrast", label: "Contrast", scheme: "dark", bg: "#050505", accent: "#ffe96b" },
+  { id: "comic-dark", label: "Comic Dark", scheme: "dark", bg: "#20201f", accent: "#df3328" },
+  { id: "rounded-dark", label: "Web 2.0 Dark", scheme: "dark", bg: "#102534", accent: "#fc34d4" },
+  { id: "paper", label: "Paper", scheme: "light", bg: "#faf7f1", accent: "#705caf" },
+  { id: "rounded", label: "Web 2.0", scheme: "light", bg: "#e9f4ff", accent: "#2d79ef" },
+  { id: "doodle", label: "Doodle", scheme: "light", bg: "#f7f2e7", accent: "#235f91" },
+  { id: "blackboard", label: "Blackboard", scheme: "dark", bg: "#1b2723", accent: "#efd98a" },
+  { id: "comic", label: "Comic book", scheme: "light", bg: "#fdf8e3", accent: "#df3328" },
+];
+const store = {
+  get(k, f) { try { const v = localStorage.getItem("doku-results:" + k); return v ? JSON.parse(v) : f; } catch { return f; } },
+  set(k, v) { try { localStorage.setItem("doku-results:" + k, JSON.stringify(v)); } catch {} },
+};
+function applySkin(id) {
+  const skin = SKINS.find((s) => s.id === id) || SKINS[0];
+  document.documentElement.dataset.skin = skin.id;
+  document.documentElement.dataset.scheme = skin.scheme;
+  document.querySelectorAll('input[name="scheme"]').forEach((i) => { i.checked = i.value === skin.scheme; });
+  store.set("skin", skin.id);
+}
+function initControls() {
+  document.getElementById("skin-chips").innerHTML = SKINS.map((s) => `
+    <label class="chip" style="--sw-bg:${s.accent}" data-od-id="skin-${s.id}">
+      <input type="radio" name="skin" value="${s.id}" ${s.id === activeSkin ? "checked" : ""} />
+      <span class="dot" style="background:${s.bg}"></span>${s.label}</label>`).join("");
+  document.querySelectorAll('input[name="skin"]').forEach((i) =>
+    i.addEventListener("change", () => applySkin(i.value)));
+  document.querySelectorAll('input[name="scheme"]').forEach((i) =>
+    i.addEventListener("change", () => applySkin(i.value === "dark" ? "night" : "paper")));
+}
+let activeSkin = store.get("skin", "night");
+
+/* ============================================================
+   F. Self-tests
+   ============================================================ */
+function runTests() {
+  const results = [];
+  const t = (name, fn) => { try { results.push([name, !!fn()]); } catch { results.push([name, false]); } };
+
+  t("fmtTime pads minutes and seconds", () => fmtTime(169) === "02:49" && fmtTime(5) === "00:05");
+  t("accuracy ring offset is 0 at 100%", () => Math.abs(quality.accuracyRingOffset(100)) < 0.01);
+  t("accuracy ring offset is full circumference at 0%", () => Math.abs(quality.accuracyRingOffset(0) - 263.9) < 0.2);
+  t("null accuracy does not divide by zero", () => quality.accuracyRingOffset(null) === 2 * Math.PI * 42);
+  t("uses quality is 100 at zero and 0 at the cap", () => quality.uses(0) === 100 && quality.uses(5) === 0 && quality.uses(9) === 0);
+  t("speed quality is 100 for the fastest, 0 for the slowest", () =>
+    quality.speed(151, GROUP) === 100 && quality.speed(312, GROUP) === 0);
+  t("speed quality is null with a single result", () => quality.speed(169, [RUN]) === null);
+  t("fingerprint always fills 81 cells", () => fingerprint(RUN.cats).length === 81 && fingerprint(RUN_ASSISTED.cats).length === 81);
+  t("fingerprint honours the category counts", () => {
+    const f = fingerprint(RUN_ASSISTED.cats);
+    const count = (k) => f.filter((c) => c === k).length;
+    return count("given") === 29 && count("correct") === 39 && count("wrong") === 6 && count("hint") === 5 && count("reveal") === 2;
+  });
+  t("the clean run's categories sum to 81", () => Object.values(RUN.cats).reduce((a, b) => a + b, 0) === 81);
+  t("bar has a fixed ten-cell width", () => bar(10).length === 10 && bar(0).length === 10 && bar(99).length === 10);
+  t("share text is exactly two lines", () => shareText(RUN).split("\n").length === 2);
+  t("three difficulty steps light up per level", () =>
+    (steps("easy").match(/class="on"/g) || []).length === 1 &&
+    (steps("medium").match(/class="on"/g) || []).length === 2 &&
+    (steps("hard").match(/class="on"/g) || []).length === 3);
+  t("row winners include every tie", () => rowWinners(DIMENSIONS[2], GROUP).length === 3);
+  t("row winners is a single id when there is a clear best", () => {
+    const w = rowWinners(DIMENSIONS[0], GROUP);
+    return w.length === 1 && w[0] === "mira";
+  });
+  t("every skin defines the full token contract", () =>
+    SKINS.length === 12 && SKINS.every((s) => s.bg && s.accent && ["light", "dark"].includes(s.scheme)));
+
+  const passed = results.filter(([, ok]) => ok).length;
+  const list = document.getElementById("st-list");
+  list.innerHTML = results.map(([n, ok]) =>
+    `<li><span class="${ok ? "ok" : "no"}">${ok ? "PASS" : "FAIL"}</span><span>${n}</span></li>`).join("");
+  const badge = document.getElementById("st-badge");
+  badge.textContent = `${passed}/${results.length}`;
+  badge.classList.toggle("fail", passed !== results.length);
+  if (location.search.includes("selftest")) document.getElementById("selftest").open = true;
+  console[passed === results.length ? "info" : "error"](`*doku result encoders: ${passed}/${results.length} tests passed`);
+  return results;
+}
+
+/* ============================================================
+   G. Boot
+   ============================================================ */
+initControls();
+applySkin(activeSkin);
+renderRun();
+renderRadar();
+renderTracks();
+renderTape();
+renderGrid();
+runTests();
+</script>
+</body>
+</html>

@@ -31,3 +31,12 @@ Optional. Guest play and browser-local saves never require an account.
 - **Sessions:** cookie on the web; the `bearer` plugin also returns a token (`set-auth-token`), stored by the client for the Discord Activity and the native app, where cookies are unreliable.
 - **Records are self-reported.** Same caveat as challenges: friendly comparison, not anti-cheat.
 - If accounts fail to load (e.g. no database on a deployment), `/api/account/config` returns `{enabled:false}` and the UI hides sign-in; the game keeps working.
+
+## Friends, leaderboards, par check (Sep 2026)
+
+Code: `server/social.ts` (routes), `src/social/` (UI), scoring in `src/game/scoring.ts`.
+
+- **Friends:** each account has a private `inviteCode`; the link is `/profile/?friend=CODE`. Opening it remembers the code on the device until the player signs in, then adds a two-way friendship (`friendship` table, one row each way). `GET/POST /api/me/friends`, `DELETE /api/me/friends/:id`, `POST /api/me/friends/invite` (new code; old links stop working). Deleting an account removes its friendships.
+- **Leaderboard:** `GET /api/leaderboard?period=week|month|year|all&scope=friends|global&view=points|speed|accuracy|independence|consistency&today=YYYY-MM-DD`. Daily puzzles only. Default view is the calculated *doku score (`points`). Privacy rule: friends board = you + friends (sign-in required); everyone board = players with `publicProfile` on **and** a @handle. Your own row is always shown to you, flagged `hidden` when you haven't opted in; nobody else sees it.
+- **Par check:** `GET /api/admin/par` for emails in `ADMIN_EMAILS` (404 for everyone else). Shows median / middle-half solve times per variant and level over the last 90 days next to the current par. Suggests a new par once a level has 30+ plays and the median is 20%+ off. Uses unassisted solves when there are enough. To change par, edit `PAR_SECONDS`; scores are computed from stored records, so boards update retroactively.
+- **Result displays:** `src/results/` (Run, Radar, Tracks, Tape, Grid), ported from `design/Sudoku-Results-Sharing-System/`. Each can be turned on/off in Settings → Result displays (`settings.resultViews`, stored on the device). Tracks always run lowest → highest value; the better end is green in both light and dark schemes.

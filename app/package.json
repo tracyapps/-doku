@@ -18,7 +18,7 @@
     "dev:web": "vite --config vite.web.config.ts",
     "dev:api": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning --import tsx server/index.ts",
     "build:web": "tsc && vite build --config vite.web.config.ts",
-    "test:game": "node --import tsx --test tests/engine.test.ts tests/session.test.ts tests/selection.test.ts tests/network.test.ts tests/service.test.ts tests/progress.test.ts tests/scoring.test.ts tests/accounts.test.ts",
+    "test:game": "node --import tsx --test tests/engine.test.ts tests/session.test.ts tests/selection.test.ts tests/network.test.ts tests/service.test.ts tests/progress.test.ts tests/scoring.test.ts tests/accounts.test.ts tests/social.test.ts tests/results.test.ts",
     "typecheck": "tsc --noEmit && tsc --ignoreConfig --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop --skipLibCheck --types node server/app.ts server/migrate.ts 'api/[...path].ts'",
     "db:migrate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning --import tsx server/migrate.ts"
   },

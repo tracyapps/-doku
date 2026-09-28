@@ -122,3 +122,52 @@ export async function signInWithProvider(provider: "discord" | "apple") {
 }
 export const passkeysSupported = () =>
   typeof window !== "undefined" && window.isSecureContext && "PublicKeyCredential" in window;
+
+/* ---- Friends + leaderboards ---- */
+export type Friend = { id: string; name: string; handle: string | null; image: string | null };
+export const getFriends = () => api<{ inviteCode: string; friends: Friend[] }>("/me/friends");
+export const addFriend = (code: string) =>
+  api<{ friend: Friend }>("/me/friends", { method: "POST", body: JSON.stringify({ code }) }).then((r) => r.friend);
+export const removeFriend = (id: string) => api(`/me/friends/${encodeURIComponent(id)}`, { method: "DELETE" });
+export const newInviteCode = () =>
+  api<{ inviteCode: string }>("/me/friends/invite", { method: "POST" }).then((r) => r.inviteCode);
+export const inviteLink = (code: string) => `${location.origin}/profile/?friend=${encodeURIComponent(code)}`;
+
+// An invite link opened before signing in is remembered until sign-in.
+const PENDING_FRIEND = "doku.pendingFriend.v1";
+export const pendingFriendCode = {
+  get: () => { try { return localStorage.getItem(PENDING_FRIEND) || ""; } catch { return ""; } },
+  set: (c: string) => { try { localStorage.setItem(PENDING_FRIEND, c); } catch { /* private mode */ } },
+  clear: () => { try { localStorage.removeItem(PENDING_FRIEND); } catch { /* private mode */ } },
+};
+
+export type BoardPeriod = "week" | "month" | "year" | "all";
+export type BoardScope = "friends" | "global";
+export type BoardViewName = "points" | "consistency" | "speed" | "accuracy" | "independence";
+export type BoardEntry = {
+  rank: number;
+  you: boolean;
+  hidden: boolean; // your own row on the global board when you haven't opted in
+  player: Friend;
+  row: {
+    points: number; dailies: number; days: number; consistency: number;
+    speed: number; accuracy: number; independence: number;
+    bestSeconds: Partial<Record<"easy" | "medium" | "hard", number>>;
+  };
+};
+export type Board = {
+  period: BoardPeriod; scope: BoardScope; view: BoardViewName; today: string;
+  start: string | null; end: string | null; players: BoardEntry[];
+};
+export const getLeaderboard = (q: { period: BoardPeriod; scope: BoardScope; view: BoardViewName; today: string }) =>
+  api<Board>(`/leaderboard?${new URLSearchParams(q)}`);
+
+export type ParLine = {
+  variant: "classic" | "hue" | "jigsaw"; difficulty: "easy" | "medium" | "hard"; par: number;
+  plays: number; players: number; unassistedPlays: number;
+  median: number | null; p25: number | null; p75: number | null; medianSpeedScore: number | null;
+  status: "not-enough-data" | "ok" | "par-too-fast" | "par-too-slow"; suggestedPar: number | null;
+};
+/** Admins only; resolves null for everyone else. */
+export const getParReport = () =>
+  api<{ since: string; days: number; minPlays: number; drift: number; lines: ParLine[] }>("/admin/par").catch(() => null);

@@ -36,6 +36,16 @@ export const dokuSchema = {
         featuredBadges: { type: "string", required: false },
         // leaderboards: show this player on global boards (opt-in)
         publicProfile: { type: "boolean", required: false, defaultValue: false },
+        // private code behind the "add me as a friend" link
+        inviteCode: { type: "string", required: false, unique: true },
+      },
+    },
+    // Two rows per friendship (one each way) so "my friends" is one lookup.
+    friendship: {
+      fields: {
+        userId: { type: "string", required: true, index: true, references: { model: "user", field: "id", onDelete: "cascade" } },
+        friendId: { type: "string", required: true, index: true, references: { model: "user", field: "id", onDelete: "cascade" } },
+        createdAt: { type: "date", required: true },
       },
     },
     playRecord: {

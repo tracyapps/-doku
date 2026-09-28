@@ -69,7 +69,13 @@ export function makeApp(store = createStore()) {
     (req.path === "/api/me/records" ? syncJson : smallJson)(req, res, next),
   );
   app.use("/api", async (req, res, next) => {
-    if (!req.path.startsWith("/me") && req.path !== "/account/config") return next();
+    if (
+      !req.path.startsWith("/me") &&
+      !req.path.startsWith("/admin/") &&
+      req.path !== "/leaderboard" &&
+      req.path !== "/account/config"
+    )
+      return next();
     const a = await accounts;
     if (!a) {
       if (req.path === "/account/config") return void res.json({ enabled: false, providers: {} });

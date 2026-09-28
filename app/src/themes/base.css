@@ -130,6 +130,159 @@ select {
   color: var(--muted);
   font-size: 14px;
 }
+/* Main nav (Play, Leaderboards, History, How to play) + utility nav
+   (settings, sign in / your profile) in the top right. */
+.site-header {
+  gap: 20px;
+}
+.site-header .main-nav {
+  flex: 1;
+  justify-content: center;
+  gap: 4px;
+}
+.main-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.main-nav a:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+}
+.main-nav a[aria-current="page"] {
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--grid-line);
+}
+.main-nav a[aria-current="page"] svg {
+  color: var(--accent);
+}
+.main-nav a:focus-visible,
+.utility-nav a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.utility-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.utility-nav a.icon-button {
+  color: var(--text);
+}
+.sign-in-link,
+.account-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 6px 16px 6px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.sign-in-link {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.account-chip {
+  padding: 5px 16px 5px 5px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--grid-line);
+  max-width: 220px;
+}
+.account-chip[aria-current="page"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.account-chip .avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: Outfit, sans-serif;
+  font-weight: 900;
+  font-size: 16px;
+}
+.account-chip .avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.account-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  /* Brand + utility on top; main nav becomes a full-width row below. */
+  .site-header {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+  .site-header .main-nav {
+    order: 3;
+    flex-basis: 100%;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--grid-line);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--surface) 40%, transparent);
+  }
+  .main-nav a span {
+    white-space: nowrap;
+  }
+
+  .main-nav a {
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding: 7px 4px;
+    border-radius: 14px;
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.15;
+  }
+  .site-header .main-nav .desktop-nav-link {
+    display: none;
+  }
+}
+@media (max-width: 420px) {
+  .main-nav a {
+    font-size: 11.5px;
+  }
+  .account-chip {
+    padding-right: 5px;
+  }
+  .account-chip-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  .sign-in-link {
+    padding-inline: 12px;
+  }
+}
 .icon-button {
   display: inline-flex;
   align-items: center;
@@ -3127,4 +3280,50 @@ html[data-doku-theme] .sheet-handle {
   background: var(--error);
   color: var(--bg);
   font-weight: 700;
+}
+
+/* Phone-frame preview: same stacked header as small screens. */
+.in-preview .site-header {
+  flex-wrap: wrap;
+  row-gap: 12px;
+}
+.in-preview .site-header .main-nav {
+  order: 3;
+  flex-basis: 100%;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--grid-line);
+  border-radius: 18px;
+}
+.in-preview .main-nav a span {
+  white-space: nowrap;
+}
+.in-preview .back-link {
+  margin-top: 0;
+}
+.in-preview .main-nav a {
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 4px;
+  font-size: 12px;
+  line-height: 1.15;
+  text-align: center;
+}
+.in-preview .account-chip-name {
+  display: none;
+}
+.in-preview .account-chip {
+  padding-right: 5px;
+}
+
+@media (max-width: 900px) {
+  /* The back link normally tucks up beside the header; the nav row sits
+     there on smaller screens. */
+  .back-link,
+  .page .back-link {
+    margin-top: 0;
+  }
 }

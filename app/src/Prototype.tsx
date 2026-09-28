@@ -9,6 +9,7 @@ import {
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   Gear,
+  UserCircle,
   DotsThree,
   Timer,
   ArrowCounterClockwise,
@@ -1019,7 +1020,9 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     if (!unsent.length && syncedIds.current.size) return;
     let live = true;
     syncRecords(unsent)
-      .then(({ records: all }) => {
+      .then(({ records: all, rejected }) => {
+        if (rejected)
+          console.warn(`*doku: the server rejected ${rejected} saved result(s).`);
         if (!live) return;
         all.forEach((r) => syncedIds.current.add(r.id));
         setRecords((local) => all.reduce(addRecord, local));
@@ -1832,7 +1835,35 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           >
             {marketingSite ? <BrandArtwork /> : <Brand />}
           </button>
-          <nav>
+          <nav className="main-nav" aria-label="Main">
+            {(
+              [
+                ["setup", "Play", PuzzlePiece],
+                ["leaderboard", "Leaderboards", Trophy],
+                ["history", "History", ClockCounterClockwise],
+                ["how", "How to play", Lightbulb],
+              ] as const
+            ).map(([to, label, Icon]) => {
+              const current =
+                screen === to ||
+                (to === "history" && screen === "results");
+              return (
+                <a
+                  key={to}
+                  href={PUBLIC_PATHS[to]}
+                  aria-current={current ? "page" : undefined}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                    e.preventDefault();
+                    if (to === "how") openHow(screen);
+                    else go(to);
+                  }}
+                >
+                  <Icon size={20} aria-hidden="true" />
+                  <span>{label}</span>
+                </a>
+              );
+            })}
             {marketingSite && (
               <>
                 <button
@@ -1841,15 +1872,16 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                 >
                   Discord
                 </button>
-                <button onClick={() => go("roadmap")}>Roadmap</button>
+                <button
+                  className="desktop-nav-link"
+                  onClick={() => go("roadmap")}
+                >
+                  Roadmap
+                </button>
               </>
             )}
-            <button
-              className={marketingSite ? "desktop-nav-link" : undefined}
-              onClick={() => openHow(screen)}
-            >
-              How to play
-            </button>
+          </nav>
+          <div className="utility-nav">
             <button
               className="icon-button"
               aria-label="Settings"
@@ -1857,7 +1889,59 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             >
               <Gear size={23} />
             </button>
-          </nav>
+            {profile ? (
+              <a
+                className="account-chip"
+                href={PUBLIC_PATHS.profile}
+                aria-current={screen === "profile" ? "page" : undefined}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                  e.preventDefault();
+                  go("profile");
+                }}
+              >
+                <span className="avatar" aria-hidden="true">
+                  {profile.image ? (
+                    <img src={profile.image} alt="" />
+                  ) : (
+                    (profile.name || profile.email || "?")[0].toUpperCase()
+                  )}
+                </span>
+                <span className="account-chip-name">
+                  <span className="sr-only">Your profile: </span>
+                  {profile.name || (profile.handle ? `@${profile.handle}` : "Profile")}
+                </span>
+              </a>
+            ) : accountConfig?.enabled ? (
+              <a
+                className="sign-in-link"
+                href={PUBLIC_PATHS.profile}
+                aria-current={screen === "profile" ? "page" : undefined}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                  e.preventDefault();
+                  go("profile");
+                }}
+              >
+                <UserCircle size={22} aria-hidden="true" />
+                Sign in
+              </a>
+            ) : (
+              <a
+                className="icon-button"
+                href={PUBLIC_PATHS.profile}
+                aria-label="Profile & badges"
+                aria-current={screen === "profile" ? "page" : undefined}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                  e.preventDefault();
+                  go("profile");
+                }}
+              >
+                <UserCircle size={24} />
+              </a>
+            )}
+          </div>
         </header>
       )}
       {storageError && (

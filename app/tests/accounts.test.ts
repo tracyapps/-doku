@@ -40,8 +40,13 @@ test('accounts: sign in by magic link, sync records, delete', async () => {
     assert.deepEqual([sync.added, sync.rejected, sync.records.length], [1, 1, 1]);
     const again = await (await fetch(`${base}/api/me/records`, { method: 'POST', headers: auth, body: JSON.stringify({ records: [rec] }) })).json();
     assert.equal(again.added, 0);
+    // Regression: the in-game timer counts fractions of a second. Those
+    // records used to be rejected silently; now they sync as whole seconds.
+    const frac = await (await fetch(`${base}/api/me/records`, { method: 'POST', headers: auth, body: JSON.stringify({ records: [{ ...rec, id: 'r3', seconds: 169.87 }] }) })).json();
+    assert.equal(frac.added, 1);
+    assert.equal(frac.records.find((r: { id: string }) => r.id === 'r3').seconds, 170);
     const exp = await (await fetch(`${base}/api/me/export`, { headers: auth })).json();
-    assert.equal(exp.records[0].id, 'r1');
+    assert.equal(exp.records.length, 2);
     assert.equal((await fetch(`${base}/api/me`, { method: 'DELETE', headers: auth })).status, 200);
     assert.equal((await fetch(`${base}/api/me`, { headers: auth })).status, 401);
   } finally {

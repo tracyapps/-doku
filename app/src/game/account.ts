@@ -75,7 +75,7 @@ export const updateProfile = (patch: Partial<Pick<Profile, "name" | "handle" | "
 
 /** Send local records the server may not have; get back the full list. */
 export const syncRecords = (records: PlayRecord[]) =>
-  api<{ records: PlayRecord[]; added: number }>("/me/records", { method: "POST", body: JSON.stringify({ records }) });
+  api<{ records: PlayRecord[]; added: number; rejected: number }>("/me/records", { method: "POST", body: JSON.stringify({ records }) });
 
 export async function downloadMyData() {
   const token = readToken();

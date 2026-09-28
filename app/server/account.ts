@@ -25,7 +25,7 @@ export function validRecord(r: any): r is PlayRecord {
     KINDS.includes(r.kind) && VARIANTS.includes(r.variant) && LEVELS.includes(r.difficulty) &&
     typeof r.seed === "string" && r.seed.length <= 120 &&
     (r.kind !== "daily" || (day(r.daily) && r.seed === `daily:${r.daily}:${r.difficulty}`)) &&
-    Number.isInteger(r.seconds) && r.seconds >= 1 && r.seconds < 86400 * 7 &&
+    typeof r.seconds === "number" && Number.isFinite(r.seconds) && r.seconds > 0 && r.seconds < 86400 * 7 &&
     (r.accuracy === null || (Number.isInteger(r.accuracy) && r.accuracy >= 0 && r.accuracy <= 100)) &&
     [r.hints, r.checks, r.reveals, r.autofills].every(count) &&
     typeof r.assisted === "boolean" && iso(r.startedAt) && iso(r.completedAt) &&
@@ -111,7 +111,11 @@ export function accountRouter() {
     try {
       const incoming = req.body?.records;
       if (!Array.isArray(incoming) || incoming.length > 5000) fail("Invalid records.");
-      const valid: PlayRecord[] = (incoming as unknown[]).filter(validRecord);
+      // Older clients saved fractional seconds (the timer ticks in fractions);
+      // accept those and store whole seconds.
+      const valid: PlayRecord[] = (incoming as unknown[])
+        .filter(validRecord)
+        .map((r) => ({ ...r, seconds: Math.max(1, Math.round(r.seconds)) }));
       const db = await adapter();
       const existing = await loadRecords(req.userId!);
       const have = new Set(existing.map((r) => r.id));

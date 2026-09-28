@@ -38,7 +38,7 @@ export function recordFromSession(s: Session): PlayRecord | null {
     seed: s.puzzle.seed,
     variant: s.puzzle.variant,
     difficulty: s.puzzle.difficulty,
-    seconds: s.seconds,
+    seconds: Math.max(1, Math.round(s.seconds)), // the timer counts fractions
     accuracy: st.accuracy,
     hints: st.hints,
     checks: st.checks,

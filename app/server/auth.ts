@@ -48,6 +48,15 @@ export const dokuSchema = {
         createdAt: { type: "date", required: true },
       },
     },
+    // A friend request sent from someone's profile (invite links skip this:
+    // opening a friend's link is already consent on both sides).
+    friendRequest: {
+      fields: {
+        fromId: { type: "string", required: true, index: true, references: { model: "user", field: "id", onDelete: "cascade" } },
+        toId: { type: "string", required: true, index: true, references: { model: "user", field: "id", onDelete: "cascade" } },
+        createdAt: { type: "date", required: true },
+      },
+    },
     playRecord: {
       fields: {
         userId: { type: "string", required: true, index: true, references: { model: "user", field: "id", onDelete: "cascade" } },

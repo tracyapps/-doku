@@ -89,6 +89,7 @@ import {
   signOut,
   syncRecords,
   addFriend,
+  playerKey as keyOfPlayer,
   pendingFriendCode,
   updateProfile,
   type AccountConfig,
@@ -134,6 +135,7 @@ import {
 import { ResultViews } from "./results/ResultViews";
 import { LeaderboardScreen } from "./social/Leaderboard";
 import { FriendsPanel } from "./social/FriendsPanel";
+import { PlayerProfileScreen } from "./social/PlayerProfile";
 import {
   DEFAULT_RESULT_VIEWS,
   RESULT_VIEWS,
@@ -159,6 +161,7 @@ type Screen =
   | "how"
   | "friends"
   | "leaderboard"
+  | "player"
   | "roadmap"
   | "terms"
   | "privacy"
@@ -300,6 +303,11 @@ const PUBLIC_PATHS: Partial<Record<Screen, string>> = {
   privacy: "/privacy/",
   terms: "/terms/",
   styleguide: "/styleguide/",
+};
+/** /u/<handle or id>/ → the key, else null. */
+const playerKeyFromPath = (path: string) => {
+  const m = /^\/u\/([^/]+)\/?$/.exec(path);
+  return m ? decodeURIComponent(m[1]) : null;
 };
 const normalizePublicPath = (path: string) =>
   path === "/" ? path : `/${path.split("/").filter(Boolean).join("/")}/`;
@@ -881,6 +889,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     if (path === "/history/") return "history";
     if (path === "/profile/") return "profile";
     if (path === "/leaderboard/") return "leaderboard";
+    if (playerKeyFromPath(path)) return "player";
     if (path === "/play/")
       return session && !session.completedAt ? "game" : "setup";
     return page === "privacy" ||
@@ -895,6 +904,9 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           : "home";
   });
   const [howReturn, setHowReturn] = useState<Screen>("home");
+  const [viewedPlayer, setViewedPlayer] = useState<string>(
+    () => playerKeyFromPath(normalizePublicPath(location.pathname)) || "",
+  );
   const [sgTheme, setSgTheme] = useState<Theme>(settings.theme);
   const [sheet, setSheet] = useState<"settings" | "more" | null>(null),
     [confirm, setConfirm] = useState<"restart" | "new" | "reveal" | null>(null);
@@ -1608,13 +1620,26 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             ? "ui-monospace, monospace"
             : '"DM Sans", sans-serif',
   } as CSSProperties;
+  // The profile go("player") should open (set by openPlayer just before).
+  const playerTarget = useRef("");
+  const [playerReturn, setPlayerReturn] = useState<Screen>("leaderboard");
+  const openPlayer = (p: { id: string; handle: string | null }) => {
+    if (screen !== "player") setPlayerReturn(screen);
+    playerTarget.current = keyOfPlayer(p);
+    setViewedPlayer(playerTarget.current);
+    go("player");
+    window.scrollTo(0, 0);
+  };
   const go = (next: Screen) => {
     setSheet(null);
     setScreen(next);
     setShareUrl("");
     if (marketingSite) {
       const url = new URL(location.href);
-      const path = PUBLIC_PATHS[next];
+      const path =
+        next === "player" && playerTarget.current
+          ? `/u/${encodeURIComponent(playerTarget.current)}/`
+          : PUBLIC_PATHS[next];
       if (path) url.pathname = path;
       url.searchParams.delete("page");
       url.searchParams.delete("play");
@@ -1652,7 +1677,12 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       else if (path === "/roadmap/") setScreen("roadmap");
       else if (path === "/styleguide/") setScreen("styleguide");
       else if (path === "/history/") setScreen("history");
-      else if (path === "/play/")
+      else if (path === "/profile/") setScreen("profile");
+      else if (path === "/leaderboard/") setScreen("leaderboard");
+      else if (playerKeyFromPath(path)) {
+        setViewedPlayer(playerKeyFromPath(path)!);
+        setScreen("player");
+      } else if (path === "/play/")
         setScreen(session && !session.completedAt ? "game" : "setup");
       else setScreen("home");
     };
@@ -2978,7 +3008,12 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             </section>
           )}
           {accountConfig?.enabled && profile && (
-            <FriendsPanel profile={profile} onProfile={setProfile} notify={notify} />
+            <FriendsPanel
+              profile={profile}
+              onProfile={setProfile}
+              notify={notify}
+              onOpenPlayer={openPlayer}
+            />
           )}
           <section aria-labelledby="often-title">
             <h2 id="often-title" className="section-label">
@@ -3116,6 +3151,44 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           <LeaderboardScreen
             signedIn={!!profile}
             onOpenProfile={() => go("profile")}
+            onOpenPlayer={openPlayer}
+          />
+        </main>
+      )}
+      {screen === "player" && viewedPlayer && (
+        <main className="page player-page">
+          <Back to={playerReturn} />
+          <PlayerProfileScreen
+            playerKey={viewedPlayer}
+            today={today}
+            signedIn={!!profile}
+            onOpenOwnProfile={() => go("profile")}
+            onSignIn={() => go("profile")}
+            notify={notify}
+            renderBadges={(earned, featured) => (
+              <ul className="badge-grid">
+                {ACHIEVEMENTS.filter((d) => earned.some((a) => a.id === d.id))
+                  .sort(
+                    (a, b) =>
+                      Number(featured.includes(b.id)) -
+                      Number(featured.includes(a.id)),
+                  )
+                  .map((def) => {
+                    const a = earned.find((x) => x.id === def.id)!;
+                    return (
+                      <BadgeCard
+                        key={def.id}
+                        def={def}
+                        awards={Array.from({ length: a.count }, (_, i) => ({
+                          id: def.id,
+                          key: `${def.id}:${i}`,
+                          earnedAt: a.lastEarnedAt,
+                        }))}
+                      />
+                    );
+                  })}
+              </ul>
+            )}
           />
         </main>
       )}

@@ -125,7 +125,8 @@ export const passkeysSupported = () =>
 
 /* ---- Friends + leaderboards ---- */
 export type Friend = { id: string; name: string; handle: string | null; image: string | null };
-export const getFriends = () => api<{ inviteCode: string; friends: Friend[] }>("/me/friends");
+export const getFriends = () =>
+  api<{ inviteCode: string; friends: Friend[]; incoming: Friend[]; outgoing: Friend[] }>("/me/friends");
 export const addFriend = (code: string) =>
   api<{ friend: Friend }>("/me/friends", { method: "POST", body: JSON.stringify({ code }) }).then((r) => r.friend);
 export const removeFriend = (id: string) => api(`/me/friends/${encodeURIComponent(id)}`, { method: "DELETE" });
@@ -171,3 +172,25 @@ export type ParLine = {
 /** Admins only; resolves null for everyone else. */
 export const getParReport = () =>
   api<{ since: string; days: number; minPlays: number; drift: number; lines: ParLine[] }>("/admin/par").catch(() => null);
+
+/* ---- Player profiles + friend requests ---- */
+export type Relationship = "self" | "friend" | "requested" | "incoming" | "none";
+export type PlayerProfile = {
+  player: Friend & { joined: string };
+  relationship: Relationship;
+  featuredBadges: string[];
+  awards: { id: string; count: number; lastEarnedAt: string }[];
+  consistency: Record<"week" | "month" | "year", { played: number; elapsed: number; percent: number }>;
+  week: BoardEntry["row"];
+  month: BoardEntry["row"];
+  totals: { puzzles: number; dailies: number };
+};
+export const getPlayer = (key: string, today: string) =>
+  api<PlayerProfile>(`/players/${encodeURIComponent(key)}?today=${today}`);
+export const sendFriendRequest = (userId: string) =>
+  api<{ relationship: Relationship }>("/me/friend-requests", { method: "POST", body: JSON.stringify({ userId }) });
+export const cancelFriendRequest = (userId: string) =>
+  api<{ relationship: Relationship }>(`/me/friend-requests/${encodeURIComponent(userId)}`, { method: "DELETE" });
+/** Where a player's profile lives: /u/<handle>/ (or /u/<id>/ without one). */
+export const playerKey = (p: { id: string; handle: string | null }) => p.handle || p.id;
+export const playerPath = (p: { id: string; handle: string | null }) => `/u/${encodeURIComponent(playerKey(p))}/`;

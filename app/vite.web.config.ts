@@ -23,7 +23,8 @@ const cleanRoutes: Plugin = {
           url.pathname === "/"
             ? "/"
             : `/${url.pathname.split("/").filter(Boolean).join("/")}/`;
-        if (publicPaths.has(path)) request.url = `/web.html${url.search}`;
+        if (publicPaths.has(path) || /^\/u\/[^/]+\/$/.test(path))
+          request.url = `/web.html${url.search}`;
       }
       next();
     });

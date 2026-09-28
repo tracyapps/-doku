@@ -21,6 +21,8 @@ import type { PlayRecord } from "../src/game/records.js";
 import type { Difficulty, Variant } from "../src/game/engine.js";
 import { periodEnd, periodStart, type Period } from "../src/game/consistency.js";
 import { COMPONENTS, PAR_SECONDS, boardRow, rank, type BoardView, type Component } from "../src/game/scoring.js";
+import { consistency } from "../src/game/consistency.js";
+import { evaluate } from "../src/game/achievements.js";
 
 type Req = express.Request & { userId?: string };
 type Row = Record<string, any>;
@@ -54,11 +56,59 @@ export async function friendIds(userId: string): Promise<string[]> {
   return rows.map((r) => r.friendId);
 }
 
-/** Removes every friendship row that mentions this user (account deletion). */
+/** Removes every friendship and request that mentions this user (account deletion). */
 export async function deleteFriendships(userId: string) {
   const db = await adapter();
   await db.deleteMany({ model: "friendship", where: [{ field: "userId", value: userId }] });
   await db.deleteMany({ model: "friendship", where: [{ field: "friendId", value: userId }] });
+  await db.deleteMany({ model: "friendRequest", where: [{ field: "fromId", value: userId }] });
+  await db.deleteMany({ model: "friendRequest", where: [{ field: "toId", value: userId }] });
+}
+
+async function clearRequests(a: string, b: string) {
+  const db = await adapter();
+  await db.deleteMany({ model: "friendRequest", where: [{ field: "fromId", value: a }, { field: "toId", value: b }] });
+  await db.deleteMany({ model: "friendRequest", where: [{ field: "fromId", value: b }, { field: "toId", value: a }] });
+}
+
+async function befriend(a: string, b: string) {
+  const db = await adapter();
+  if (!(await friendIds(a)).includes(b)) {
+    const createdAt = new Date();
+    await db.create({ model: "friendship", data: { userId: a, friendId: b, createdAt } });
+    await db.create({ model: "friendship", data: { userId: b, friendId: a, createdAt } });
+  }
+  await clearRequests(a, b);
+}
+
+export type Relationship = "self" | "friend" | "requested" | "incoming" | "none";
+async function relationship(me: string | undefined, other: string): Promise<Relationship> {
+  if (!me) return "none";
+  if (me === other) return "self";
+  if ((await friendIds(me)).includes(other)) return "friend";
+  const db = await adapter();
+  const req = await db.findMany<Row>({
+    model: "friendRequest",
+    where: [{ field: "fromId", value: [me, other], operator: "in" }, { field: "toId", value: [me, other], operator: "in" }],
+    limit: 4,
+  });
+  if (req.some((r) => r.fromId === me && r.toId === other)) return "requested";
+  if (req.some((r) => r.fromId === other && r.toId === me)) return "incoming";
+  return "none";
+}
+/** Profiles are visible to yourself, friends, anyone you have a request
+ *  with, and — for players on the everyone board — to all. */
+const visible = (u: Row, rel: Relationship) =>
+  rel !== "none" || (!!u.publicProfile && !!u.handle);
+
+async function findPlayer(key: string): Promise<Row | null> {
+  const db = await adapter();
+  const handle = key.startsWith("@") ? key.slice(1) : key;
+  if (/^[a-z0-9_]{3,20}$/.test(handle)) {
+    const byHandle = await db.findOne<Row>({ model: "user", where: [{ field: "handle", value: handle }] });
+    if (byHandle) return byHandle;
+  }
+  return db.findOne<Row>({ model: "user", where: [{ field: "id", value: key }] });
 }
 
 /** Routes that need a signed-in player (mounted under /me). */
@@ -70,7 +120,21 @@ export function friendRoutes(router: express.Router) {
       const users = ids.length
         ? await db.findMany<Row>({ model: "user", where: [{ field: "id", value: ids, operator: "in" }], limit: 5000 })
         : [];
-      res.json({ inviteCode: await inviteCodeFor(req.userId!), friends: users.map(publicPlayer) });
+      const reqs = [
+        ...(await db.findMany<Row>({ model: "friendRequest", where: [{ field: "toId", value: req.userId! }], limit: 500 })),
+        ...(await db.findMany<Row>({ model: "friendRequest", where: [{ field: "fromId", value: req.userId! }], limit: 500 })),
+      ];
+      const otherIds = reqs.map((r) => (r.fromId === req.userId ? r.toId : r.fromId));
+      const others = otherIds.length
+        ? await db.findMany<Row>({ model: "user", where: [{ field: "id", value: otherIds, operator: "in" }], limit: 1000 })
+        : [];
+      const who = (id: string) => others.find((u) => u.id === id);
+      res.json({
+        inviteCode: await inviteCodeFor(req.userId!),
+        friends: users.map(publicPlayer),
+        incoming: reqs.filter((r) => r.toId === req.userId && who(r.fromId)).map((r) => publicPlayer(who(r.fromId)!)),
+        outgoing: reqs.filter((r) => r.fromId === req.userId && who(r.toId)).map((r) => publicPlayer(who(r.toId)!)),
+      });
     } catch (e) {
       next(e);
     }
@@ -85,12 +149,7 @@ export function friendRoutes(router: express.Router) {
       const other = await db.findOne<Row>({ model: "user", where: [{ field: "inviteCode", value: code }] });
       if (!other) fail("That invite has expired or doesn’t exist. Ask your friend for a new link.", 404);
       if (other!.id === req.userId) fail("That’s your own invite link — send it to a friend instead.");
-      const already = await friendIds(req.userId!);
-      if (!already.includes(other!.id)) {
-        const createdAt = new Date();
-        await db.create({ model: "friendship", data: { userId: req.userId!, friendId: other!.id, createdAt } });
-        await db.create({ model: "friendship", data: { userId: other!.id, friendId: req.userId!, createdAt } });
-      }
+      await befriend(req.userId!, other!.id);
       res.json({ friend: publicPlayer(other!) });
     } catch (e) {
       next(e);
@@ -104,6 +163,35 @@ export function friendRoutes(router: express.Router) {
       await db.deleteMany({ model: "friendship", where: [{ field: "userId", value: a }, { field: "friendId", value: b }] });
       await db.deleteMany({ model: "friendship", where: [{ field: "userId", value: b }, { field: "friendId", value: a }] });
       res.json({ removed: true });
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  // Send a friend request from someone's profile. If they already asked
+  // you, this accepts it and you're friends.
+  router.post("/me/friend-requests", async (req: Req, res, next) => {
+    try {
+      const me = req.userId!, to = req.body?.userId;
+      if (typeof to !== "string" || !to || to === me) fail("Choose someone to add.");
+      const db = await adapter();
+      const other = await db.findOne<Row>({ model: "user", where: [{ field: "id", value: to }] });
+      const rel = other ? await relationship(me, other.id) : "none";
+      if (!other || !visible(other, rel)) fail("That player can’t be found.", 404);
+      if (rel === "incoming") await befriend(me, other!.id);
+      else if (rel === "none")
+        await db.create({ model: "friendRequest", data: { fromId: me, toId: other!.id, createdAt: new Date() } });
+      res.json({ relationship: await relationship(me, other!.id) });
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  // Cancel a request you sent, or decline one you received.
+  router.delete("/me/friend-requests/:id", async (req: Req, res, next) => {
+    try {
+      await clearRequests(req.userId!, String(req.params.id));
+      res.json({ relationship: await relationship(req.userId!, String(req.params.id)) });
     } catch (e) {
       next(e);
     }
@@ -190,6 +278,46 @@ export function boardRoutes(router: express.Router) {
         end: period === "all" ? null : periodEnd(period, today),
         components: enabled,
         players: rows.map((p, i) => ({ rank: i + 1, ...p })),
+      });
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  // GET /api/players/:key?today=YYYY-MM-DD — someone's public profile
+  // (key = @handle or id). Summary stats and badges only, never raw games.
+  router.get("/players/:key", async (req, res, next) => {
+    try {
+      const me = await sessionUser(req);
+      const u = await findPlayer(String(req.params.key));
+      const rel = u ? await relationship(me?.id, u.id) : "none";
+      if (!u || !visible(u, rel)) fail("This profile is private or doesn’t exist.", 404);
+      const today = isDay(req.query.today) ? req.query.today : new Date().toISOString().slice(0, 10);
+      const db = await adapter();
+      const rows = await db.findMany<Row>({ model: "playRecord", where: [{ field: "userId", value: u!.id }], limit: 100000 });
+      const records = rows
+        .map((r) => JSON.parse(r.data) as PlayRecord)
+        .sort((a, b) => a.completedAt.localeCompare(b.completedAt));
+      const awards = new Map<string, { id: string; count: number; lastEarnedAt: string }>();
+      for (const a of evaluate({ records, today })) {
+        const cur = awards.get(a.id);
+        awards.set(a.id, { id: a.id, count: (cur?.count ?? 0) + 1, lastEarnedAt: a.earnedAt });
+      }
+      let featured: string[] = [];
+      try { featured = u!.featuredBadges ? JSON.parse(u!.featuredBadges) : []; } catch { /* ignore */ }
+      const period = (p: Period) => {
+        const c = consistency(records, p, today);
+        return { played: c.played, elapsed: c.elapsed, percent: c.percent };
+      };
+      res.json({
+        player: { ...publicPlayer(u!), joined: u!.createdAt },
+        relationship: rel,
+        featuredBadges: featured,
+        awards: [...awards.values()],
+        consistency: { week: period("week"), month: period("month"), year: period("year") },
+        week: boardRow(records, "week", today),
+        month: boardRow(records, "month", today),
+        totals: { puzzles: records.length, dailies: records.filter((r) => r.kind === "daily").length },
       });
     } catch (e) {
       next(e);

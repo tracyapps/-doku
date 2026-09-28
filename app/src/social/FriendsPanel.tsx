@@ -2,17 +2,24 @@
 // the everyone-leaderboard opt-in, and — for admins only — the par check.
 import { useEffect, useState } from "react";
 import {
-  addFriend, getFriends, getParReport, inviteLink, newInviteCode, removeFriend, updateProfile,
+  addFriend, cancelFriendRequest, getFriends, playerPath, sendFriendRequest, getParReport, inviteLink, newInviteCode, removeFriend, updateProfile,
   type Friend, type ParLine, type Profile,
 } from "../game/account.js";
 import { formatTime } from "../game/session.js";
 import "./social.css";
 
 export function FriendsPanel({
-  profile, onProfile, notify,
-}: { profile: Profile; onProfile: (p: Profile) => void; notify: (m: string) => void }) {
+  profile, onProfile, notify, onOpenPlayer,
+}: {
+  profile: Profile;
+  onProfile: (p: Profile) => void;
+  notify: (m: string) => void;
+  onOpenPlayer: (p: { id: string; handle: string | null }) => void;
+}) {
   const [code, setCode] = useState("");
   const [friends, setFriends] = useState<Friend[] | null>(null);
+  const [incoming, setIncoming] = useState<Friend[]>([]);
+  const [outgoing, setOutgoing] = useState<Friend[]>([]);
   const [entry, setEntry] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -20,7 +27,12 @@ export function FriendsPanel({
 
   const load = () =>
     getFriends()
-      .then((r) => { setCode(r.inviteCode); setFriends(r.friends); })
+      .then((r) => {
+        setCode(r.inviteCode);
+        setFriends(r.friends);
+        setIncoming(r.incoming ?? []);
+        setOutgoing(r.outgoing ?? []);
+      })
       .catch((e: Error) => setNote(e.message));
   useEffect(() => { void load(); }, [profile.id]);
 
@@ -78,6 +90,41 @@ export function FriendsPanel({
           </div>
         </form>
 
+        {incoming.length > 0 && (
+          <>
+            <h3 className="request-title">Friend requests</h3>
+            <ul className="friend-rows request-rows" aria-label="Friend requests">
+              {incoming.map((f) => (
+                <li key={f.id}>
+                  <span><PlayerLink f={f} open={onOpenPlayer} /> wants to be friends</span>
+                  <span className="request-actions">
+                    <button className="secondary" disabled={busy}
+                      onClick={() => act(async () => { await sendFriendRequest(f.id); notify(`You and ${f.name} are now friends.`); await load(); })}>
+                      Accept
+                    </button>
+                    <button className="text-button" disabled={busy}
+                      onClick={() => act(async () => { await cancelFriendRequest(f.id); await load(); })}>
+                      Decline
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        {outgoing.length > 0 && (
+          <ul className="friend-rows" aria-label="Requests you sent">
+            {outgoing.map((f) => (
+              <li key={f.id}>
+                <span><PlayerLink f={f} open={onOpenPlayer} /> <small>· request sent</small></span>
+                <button className="text-button" disabled={busy}
+                  onClick={() => act(async () => { await cancelFriendRequest(f.id); await load(); })}>
+                  Cancel
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         {friends && (
           friends.length === 0 ? (
             <p className="fine-print">No friends added yet.</p>
@@ -85,7 +132,10 @@ export function FriendsPanel({
             <ul className="friend-rows" aria-label="Your friends">
               {friends.map((f) => (
                 <li key={f.id}>
-                  <span><strong>{f.name}</strong>{f.handle && <small> @{f.handle}</small>}</span>
+                  <span>
+                    <PlayerLink f={f} open={onOpenPlayer} />
+                    {f.handle && <small> @{f.handle}</small>}
+                  </span>
                   {confirmRemove === f.id ? (
                     <span className="friend-confirm">
                       <button className="text-button danger-link" disabled={busy}
@@ -95,7 +145,17 @@ export function FriendsPanel({
                       <button className="text-button" onClick={() => setConfirmRemove(null)}>Keep</button>
                     </span>
                   ) : (
-                    <button className="text-button" onClick={() => setConfirmRemove(f.id)} aria-label={`Remove ${f.name}`}>Remove</button>
+                    <span className="request-actions">
+                      <a className="text-button" href={playerPath(f)} aria-label={`View ${f.name}’s profile`}
+                        onClick={(e) => {
+                          if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                          e.preventDefault();
+                          onOpenPlayer(f);
+                        }}>
+                        View profile
+                      </a>
+                      <button className="text-button" onClick={() => setConfirmRemove(f.id)} aria-label={`Remove ${f.name}`}>Remove</button>
+                    </span>
                   )}
                 </li>
               ))}
@@ -128,6 +188,23 @@ export function FriendsPanel({
 
       <ParCheck />
     </>
+  );
+}
+
+function PlayerLink({ f, open }: { f: Friend; open: (p: Friend) => void }) {
+  return (
+    <a
+      className="player-link"
+      href={playerPath(f)}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+        e.preventDefault();
+        open(f);
+      }}
+    >
+      <strong>{f.name}</strong>
+      <span className="sr-only">, view profile</span>
+    </a>
   );
 }
 

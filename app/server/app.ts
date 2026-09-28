@@ -73,6 +73,7 @@ export function makeApp(store = createStore()) {
       !req.path.startsWith("/me") &&
       !req.path.startsWith("/admin/") &&
       req.path !== "/leaderboard" &&
+      !req.path.startsWith("/players/") &&
       req.path !== "/account/config"
     )
       return next();

@@ -168,3 +168,108 @@
 }
 .social-card > .text-button { display: inline-block; margin: 4px 0 8px; font-size: 13px; }
 .friend-rows .text-button { padding: 8px 0; }
+
+/* Player profile */
+.player-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 8px;
+}
+.player-head .page-title { margin: 0; }
+.player-head .eyebrow { margin: 0 0 4px; }
+.player-head .muted { margin: 4px 0 0; }
+.player-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: Outfit, sans-serif;
+  font-weight: 900;
+  font-size: 32px;
+}
+.player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.player-relation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 20px 0 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--grid-line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 34%, var(--bg));
+}
+.player-relation .fine-print { flex-basis: 100%; margin: 0; order: 3; }
+.player-relation .text-button {
+  display: inline;
+  margin: 0;
+  padding: 8px 0;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+  border: 1px solid var(--grid-line);
+  background: var(--surface-soft);
+}
+.rel-badge.friend { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.rel-badge.friend svg { width: 16px; height: 16px; }
+.rel-badge.pending { border-style: dashed; }
+.player-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.player-stats div {
+  padding: 12px 14px;
+  border: 1px solid var(--grid-line);
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+.player-stats dt { font-size: 12px; color: var(--muted); font-weight: 700; }
+.player-stats dd {
+  margin: 2px 0 0;
+  font-family: Outfit, sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Clickable names (leaderboard rows, friend lists) */
+.player-link {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+}
+.player-link:hover strong,
+.player-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.player-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.lb-list li:has(.player-link:hover) { border-color: var(--accent); }
+.request-rows li { gap: 8px; }
+.request-actions { display: inline-flex; gap: 14px; align-items: center; }
+.request-title { margin: 20px 0 0; font-size: 15px; }
+.player-page section { margin-top: 30px; }
+.player-page .consistency-grid { margin-top: 12px; }
+/* Names that open a profile read as links. */
+.player-link strong {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.player-link:hover strong { text-decoration-color: currentColor; }
+.request-actions .text-button { color: var(--accent); }

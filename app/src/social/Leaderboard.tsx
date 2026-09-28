@@ -3,7 +3,7 @@
 // by one dimension. Only daily puzzles count.
 import { useEffect, useState } from "react";
 import {
-  getLeaderboard, type Board, type BoardPeriod, type BoardScope, type BoardViewName,
+  getLeaderboard, playerPath, type Board, type BoardPeriod, type BoardScope, type BoardViewName,
 } from "../game/account.js";
 import { dateKey } from "../game/daily.js";
 import { formatTime } from "../game/session.js";
@@ -52,8 +52,12 @@ const rangeLabel = (b: Board) => {
 };
 
 export function LeaderboardScreen({
-  signedIn, onOpenProfile,
-}: { signedIn: boolean; onOpenProfile: () => void }) {
+  signedIn, onOpenProfile, onOpenPlayer,
+}: {
+  signedIn: boolean;
+  onOpenProfile: () => void;
+  onOpenPlayer: (p: { id: string; handle: string | null }) => void;
+}) {
   const [scope, setScope] = useState<BoardScope>(signedIn ? "friends" : "global");
   // Sign-in finishes loading after first render: default to friends once
   // it does, unless the player already picked a board.
@@ -140,7 +144,18 @@ export function LeaderboardScreen({
                 <li key={p.player.id} className={p.you ? "you" : ""} aria-current={p.you ? "true" : undefined}>
                   <span className="lb-rank" aria-label={`Rank ${p.rank}`}>{p.rank}</span>
                   <span className="lb-name">
-                    <strong>{p.you ? `${p.player.name || "You"} (you)` : p.player.name}</strong>
+                    <a
+                      className="player-link"
+                      href={playerPath(p.player)}
+                      onClick={(e) => {
+                        if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                        e.preventDefault();
+                        onOpenPlayer(p.player);
+                      }}
+                    >
+                      <strong>{p.you ? `${p.player.name || "You"} (you)` : p.player.name}</strong>
+                      <span className="sr-only">, view profile</span>
+                    </a>
                     <small>
                       {p.player.handle ? `@${p.player.handle} · ` : ""}
                       {p.row.dailies} {p.row.dailies === 1 ? "daily" : "dailies"}

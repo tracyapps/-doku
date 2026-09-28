@@ -66,10 +66,34 @@ test('friends + leaderboards respect the privacy rule', async () => {
     const par = await get(tapps, '/admin/par');
     assert.equal(par.lines.find((l: { variant: string; difficulty: string }) => l.variant === 'classic' && l.difficulty === 'easy').plays, 3);
 
+    // Player profiles: friends and everyone-board players are visible;
+    // private non-friends are not. Relationship is reported to the viewer.
+    const sueProfile = await get(tapps, '/players/sue_draws?today=2026-09-27');
+    assert.equal(sueProfile.relationship, 'friend');
+    assert.equal(sueProfile.week.dailies, 1);
+    assert.ok(Array.isArray(sueProfile.awards));
+    assert.equal(sueProfile.records, undefined, 'raw games are never exposed');
+    assert.equal((await get(stranger, '/players/sue_draws')).error !== undefined, true);
+    assert.equal((await fetch(`${base}/api/players/sue_draws`)).status, 404);
+    assert.equal((await get(origin, '/players/stranger')).relationship, 'none');
+    assert.equal((await get(tapps, '/players/tapps')).error !== undefined, true); // no handle, looked up by id instead
+    const tappsId = (await get(tapps, '/me')).profile.id;
+    assert.equal((await get(tapps, `/players/${tappsId}`)).relationship, 'self');
+
+    // Friend requests from a profile: request → pending both ways → accept.
+    const strangerId = (await get(stranger, '/me')).profile.id;
+    assert.equal((await send(sue, '/me/friend-requests', { userId: strangerId })).relationship, 'requested');
+    assert.equal((await get(stranger, '/players/sue_draws')).relationship, 'incoming'); // requester becomes visible
+    assert.equal((await get(stranger, '/me/friends')).incoming[0].name, 'Sue');
+    assert.equal((await send(stranger, '/me/friend-requests', { userId: (await get(sue, '/me')).profile.id })).relationship, 'friend');
+    assert.equal((await get(sue, '/me/friends')).outgoing.length, 0);
+    // A private player can't be requested by a stranger.
+    assert.equal((await fetch(`${base}/api/me/friend-requests`, { method: 'POST', headers: stranger, body: JSON.stringify({ userId: tappsId }) })).status, 404);
+
     // Removing a friend removes both directions.
     const sueId = (await get(sue, '/me')).profile.id;
     await fetch(`${base}/api/me/friends/${sueId}`, { method: 'DELETE', headers: tapps });
-    assert.equal((await get(sue, '/me/friends')).friends.length, 0);
+    assert.deepEqual((await get(sue, '/me/friends')).friends.map((f: { name: string }) => f.name), ['Stranger']);
   } finally {
     console.log = log;
     await new Promise<void>((r) => server.close(() => r()));

@@ -21,6 +21,8 @@
     { "source": "/history/", "destination": "/web.html" },
     { "source": "/profile/", "destination": "/web.html" },
     { "source": "/leaderboard/", "destination": "/web.html" },
+    { "source": "/u/:key", "destination": "/web.html" },
+    { "source": "/u/:key/", "destination": "/web.html" },
     { "source": "/roadmap/", "destination": "/web.html" },
     { "source": "/how/", "destination": "/web.html" },
     { "source": "/privacy/", "destination": "/web.html" },

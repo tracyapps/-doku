@@ -113,6 +113,19 @@ export async function addPasskey() {
   const result = await authClient.passkey.addPasskey({ name: "*doku" });
   if (result?.error) throw new Error(result.error.message || "Couldn't add a passkey.");
 }
+/** Inside the Discord Activity: sign in through the Discord SDK instead of
+ *  a redirect (Discord blocks redirects inside its frame). */
+export async function signInWithDiscordActivity() {
+  const { discordSignInCode } = await import("./network.js");
+  let code: string;
+  try {
+    code = await discordSignInCode();
+  } catch {
+    throw new Error("Discord sign-in was cancelled or isn’t available right now.");
+  }
+  const { token } = await api<{ token: string }>("/account/discord-activity", { method: "POST", body: JSON.stringify({ code }) });
+  writeToken(token);
+}
 export async function signInWithProvider(provider: "discord" | "apple") {
   const result = await authClient.signIn.social({ provider, callbackURL: back, errorCallbackURL: `${back}?signin=error` });
   if (result?.error) {

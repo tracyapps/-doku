@@ -88,6 +88,7 @@ import {
   signInWithProvider,
   signOut,
   syncRecords,
+  signInWithDiscordActivity,
   addFriend,
   playerKey as keyOfPlayer,
   pendingFriendCode,
@@ -129,6 +130,7 @@ import {
   openExternalUrl,
   shareDiscordChallenge,
   discordChallengeMessage,
+  isDiscordActivity,
   type RoadmapFeed,
   type RoadmapIssue,
 } from "./game/network";
@@ -811,6 +813,7 @@ export default function Prototype() {
 export function DokuApp({ preview = false }: { preview?: boolean }) {
   const marketingSite =
     !preview && !new URLSearchParams(location.search).has("frame_id");
+  const inDiscord = !preview && isDiscordActivity();
   const [playerName, setPlayerName] = useState(() =>
     readSaved<string>("doku.name.v1", ""),
   );
@@ -1931,7 +1934,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                 }}
               >
                 <span className="avatar" aria-hidden="true">
-                  {profile.image ? (
+                  {profile.image && !inDiscord ? (
                     <img src={profile.image} alt="" />
                   ) : (
                     (profile.name || profile.email || "?")[0].toUpperCase()
@@ -2781,7 +2784,34 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                     play with friends. Playing as a guest always works — no
                     account needed.
                   </p>
-                  {linkSentTo ? (
+                  {inDiscord ? (
+                    <>
+                      <p className="muted">
+                        You’re playing inside Discord, so sign in with your
+                        Discord account. It’s the same *doku account as
+                        “Continue with Discord” on stardoku.app.
+                      </p>
+                      {accountConfig.providers.discord ? (
+                        <button
+                          className="primary"
+                          disabled={accountBusy}
+                          onClick={() =>
+                            accountAction(async () => {
+                              await signInWithDiscordActivity();
+                              await refreshProfile();
+                            })
+                          }
+                        >
+                          Continue with Discord
+                        </button>
+                      ) : (
+                        <p className="fine-print">
+                          Discord sign-in isn’t available right now. You can
+                          sign in on stardoku.app in your browser.
+                        </p>
+                      )}
+                    </>
+                  ) : linkSentTo ? (
                     <p className="account-sent" role="status">
                       <CheckCircle size={20} weight="fill" /> Check{" "}
                       <strong>{linkSentTo}</strong> for a sign-in link. It works
@@ -2819,6 +2849,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                       </div>
                     </form>
                   )}
+                  {!inDiscord && (
                   <div className="account-alt">
                     {passkeysSupported() && (
                       <button
@@ -2857,6 +2888,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                       </button>
                     )}
                   </div>
+                  )}
                 </>
               ) : (
                 <>

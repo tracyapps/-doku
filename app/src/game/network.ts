@@ -113,7 +113,8 @@ export const discordChallengeMessage = (
 let discordSdkPromise: Promise<
   import("@discord/embedded-app-sdk").DiscordSDK
 > | null = null;
-const isDiscordActivity = () =>
+export const isDiscordActivity = () =>
+  typeof location !== "undefined" &&
   new URLSearchParams(location.search).has("frame_id");
 const getDiscordSdk = () =>
   (discordSdkPromise ??= (async () => {
@@ -166,6 +167,21 @@ export async function initializeDiscord(): Promise<DiscordStatus> {
       challengeId,
     };
   }
+}
+/** Ask Discord (in-app, no redirect) for a one-time code to sign in with.
+ *  Adds the email scope so an existing *doku account with the same verified
+ *  email is found; Discord shows its own permission prompt. */
+export async function discordSignInCode(): Promise<string> {
+  const clientId =
+    import.meta.env.VITE_DISCORD_CLIENT_ID || "1548073007950602303";
+  const sdk = await getDiscordSdk();
+  const { code } = await sdk.commands.authorize({
+    client_id: clientId,
+    response_type: "code",
+    state: "",
+    scope: ["identify", "email"],
+  });
+  return code;
 }
 export async function shareDiscordChallenge(
   challengeId: string,

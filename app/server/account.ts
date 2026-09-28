@@ -44,6 +44,62 @@ export function accountRouter() {
   // Leaderboard (global works signed out) + admin par check.
   boardRoutes(router);
 
+  // Sign in from inside the Discord Activity. The Activity can't redirect
+  // to discord.com (Discord blocks that inside its frame — a white screen),
+  // so the Discord SDK asks for permission in-app and hands us a one-time
+  // code. We exchange it, find or create the matching *doku account (same
+  // Discord identity as "Continue with Discord" on the web), and return a
+  // session token for the bearer header.
+  router.post("/account/discord-activity", async (req, res, next) => {
+    try {
+      const code = req.body?.code;
+      if (typeof code !== "string" || !code || code.length > 2048) fail("Invalid authorization code.");
+      const clientId = process.env.DISCORD_CLIENT_ID, clientSecret = process.env.DISCORD_CLIENT_SECRET;
+      if (!clientId || !clientSecret) fail("Discord sign-in isn’t set up on this server.", 503);
+      const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ client_id: clientId!, client_secret: clientSecret!, grant_type: "authorization_code", code }),
+      });
+      if (!tokenRes.ok) fail("Discord didn’t accept that sign-in. Please try again.", 401);
+      const token = (await tokenRes.json()) as { access_token: string; refresh_token?: string; scope?: string };
+      const meRes = await fetch("https://discord.com/api/users/@me", { headers: { Authorization: `Bearer ${token.access_token}` } });
+      if (!meRes.ok) fail("Couldn’t read your Discord profile. Please try again.", 401);
+      const d = (await meRes.json()) as { id: string; username: string; global_name?: string | null; avatar?: string | null; email?: string | null; verified?: boolean };
+      const image = d.avatar ? `https://cdn.discordapp.com/avatars/${d.id}/${d.avatar}.${d.avatar.startsWith("a_") ? "gif" : "png"}` : null;
+      const ctx = await auth.$context;
+      const db = ctx.adapter;
+      let userId: string | undefined;
+      const linked = await db.findOne<{ userId: string }>({ model: "account", where: [{ field: "providerId", value: "discord" }, { field: "accountId", value: d.id }] });
+      if (linked) userId = linked.userId;
+      else {
+        // Same verified email as an existing account → link to it (matches the
+        // web's trusted-provider account linking). Otherwise make a new account.
+        const email = d.email && d.verified ? d.email.toLowerCase() : null;
+        const existing = email ? await ctx.internalAdapter.findUserByEmail(email) : null;
+        if (existing) userId = existing.user.id;
+        else {
+          const created = await ctx.internalAdapter.createUser({
+            name: d.global_name || d.username,
+            email: email ?? `discord-${d.id}@users.stardoku.app`, // no email shared: a placeholder, never mailed
+            emailVerified: !!email,
+            image,
+          }, { method: "oauth", oauth: { providerId: "discord", profile: d } });
+          userId = created.id;
+        }
+        await ctx.internalAdapter.linkAccount({
+          userId: userId!, providerId: "discord", accountId: d.id,
+          accessToken: token.access_token, refreshToken: token.refresh_token, scope: token.scope,
+        });
+      }
+      const session = await ctx.internalAdapter.createSession(userId!);
+      if (!session) fail("Couldn’t start a session. Please try again.", 500);
+      res.json({ token: session.token });
+    } catch (e) {
+      next(e);
+    }
+  });
+
   // Everything below needs a session.
   router.use("/me", async (req: Req, _res, next) => {
     try {

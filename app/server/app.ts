@@ -74,7 +74,7 @@ export function makeApp(store = createStore()) {
       !req.path.startsWith("/admin/") &&
       req.path !== "/leaderboard" &&
       !req.path.startsWith("/players/") &&
-      req.path !== "/account/config"
+      !req.path.startsWith("/account/")
     )
       return next();
     const a = await accounts;

@@ -108,6 +108,8 @@ if (env.APPLE_CLIENT_ID && env.APPLE_CLIENT_SECRET)
 const trusted = [
   publicURL,
   ...(env.AUTH_TRUSTED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean),
+  // The Discord Activity runs on <client id>.discordsays.com and proxies to us.
+  ...(env.DISCORD_CLIENT_ID ? [`https://${env.DISCORD_CLIENT_ID}.discordsays.com`] : []),
   ...(production ? [] : ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174"]),
   "https://appleid.apple.com",
 ];

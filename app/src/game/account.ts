@@ -116,14 +116,9 @@ export async function addPasskey() {
 /** Inside the Discord Activity: sign in through the Discord SDK instead of
  *  a redirect (Discord blocks redirects inside its frame). */
 export async function signInWithDiscordActivity() {
-  const { discordSignInCode } = await import("./network.js");
-  let code: string;
-  try {
-    code = await discordSignInCode();
-  } catch {
-    throw new Error("Discord sign-in was cancelled or isn’t available right now.");
-  }
-  const { token } = await api<{ token: string }>("/account/discord-activity", { method: "POST", body: JSON.stringify({ code }) });
+  const { discordSignIn } = await import("./network.js");
+  const credentials = await discordSignIn(); // throws with Discord's reason
+  const { token } = await api<{ token: string }>("/account/discord-activity", { method: "POST", body: JSON.stringify(credentials) });
   writeToken(token);
 }
 export async function signInWithProvider(provider: "discord" | "apple") {

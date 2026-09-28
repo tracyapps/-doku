@@ -19,6 +19,12 @@ test('Discord Activity sign-in finds, links, or creates the account', async () =
       const code = new URLSearchParams(String(init?.body)).get('code')!;
       return users[code] ? Response.json({ access_token: `tok-${code}`, scope: 'identify email' }) : new Response('bad', { status: 400 });
     }
+    if (url === 'https://discord.com/api/oauth2/@me') {
+      const tok = String((init?.headers as Record<string, string>).Authorization).replace('Bearer ', '');
+      return tok === 'tok-code-a' ? Response.json({ application: { id: '1548073007950602303' }, scopes: ['identify'] })
+        : tok === 'other-app' ? Response.json({ application: { id: '999' }, scopes: ['identify'] })
+        : new Response('no', { status: 401 });
+    }
     if (url === 'https://discord.com/api/users/@me') {
       const code = String((init?.headers as Record<string, string>).Authorization).replace('Bearer tok-', '');
       return Response.json(users[code]);
@@ -59,6 +65,14 @@ test('Discord Activity sign-in finds, links, or creates the account', async () =
     const webId = (await me(webToken)).id;
     const b = await signIn('code-b');
     assert.equal((await me(b.body.token)).id, webId);
+
+    // Fallback: the launch-time access token works if it was issued to our app…
+    const viaToken = await realFetch(`${base}/api/account/discord-activity`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...discordOrigin }, body: JSON.stringify({ access_token: 'tok-code-a' }) });
+    assert.equal(viaToken.status, 200);
+    assert.equal((await me((await viaToken.json()).token)).id, p1.id);
+    // …and a token from any other Discord app is refused.
+    const foreign = await realFetch(`${base}/api/account/discord-activity`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...discordOrigin }, body: JSON.stringify({ access_token: 'other-app' }) });
+    assert.equal(foreign.status, 401);
 
     // A bad code is refused cleanly.
     assert.equal((await signIn('nope')).status, 401);

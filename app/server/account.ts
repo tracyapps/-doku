@@ -52,17 +52,26 @@ export function accountRouter() {
   // session token for the bearer header.
   router.post("/account/discord-activity", async (req, res, next) => {
     try {
-      const code = req.body?.code;
-      if (typeof code !== "string" || !code || code.length > 2048) fail("Invalid authorization code.");
+      const { code, access_token } = req.body ?? {};
       const clientId = process.env.DISCORD_CLIENT_ID, clientSecret = process.env.DISCORD_CLIENT_SECRET;
       if (!clientId || !clientSecret) fail("Discord sign-in isn’t set up on this server.", 503);
-      const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ client_id: clientId!, client_secret: clientSecret!, grant_type: "authorization_code", code }),
-      });
-      if (!tokenRes.ok) fail("Discord didn’t accept that sign-in. Please try again.", 401);
-      const token = (await tokenRes.json()) as { access_token: string; refresh_token?: string; scope?: string };
+      let token: { access_token: string; refresh_token?: string; scope?: string };
+      if (typeof code === "string" && code && code.length <= 2048) {
+        const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ client_id: clientId!, client_secret: clientSecret!, grant_type: "authorization_code", code }),
+        });
+        if (!tokenRes.ok) fail("Discord didn’t accept that sign-in. Please try again.", 401);
+        token = (await tokenRes.json()) as typeof token;
+      } else if (typeof access_token === "string" && access_token && access_token.length <= 2048) {
+        // The Activity's launch-time token. Only accept tokens issued to *our*
+        // Discord app, so a token from some other app can't be replayed here.
+        const infoRes = await fetch("https://discord.com/api/oauth2/@me", { headers: { Authorization: `Bearer ${access_token}` } });
+        const info = infoRes.ok ? ((await infoRes.json()) as { application?: { id?: string }; scopes?: string[] }) : null;
+        if (!info || info.application?.id !== clientId) fail("Discord didn’t accept that sign-in. Please try again.", 401);
+        token = { access_token, scope: info!.scopes?.join(" ") };
+      } else token = fail("Invalid authorization code.");
       const meRes = await fetch("https://discord.com/api/users/@me", { headers: { Authorization: `Bearer ${token.access_token}` } });
       if (!meRes.ok) fail("Couldn’t read your Discord profile. Please try again.", 401);
       const d = (await meRes.json()) as { id: string; username: string; global_name?: string | null; avatar?: string | null; email?: string | null; verified?: boolean };

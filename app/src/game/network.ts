@@ -116,6 +116,9 @@ let discordSdkPromise: Promise<
 export const isDiscordActivity = () =>
   typeof location !== "undefined" &&
   new URLSearchParams(location.search).has("frame_id");
+// The access token from the launch-time authorization (identify scope),
+// kept in memory only, so sign-in can fall back to it.
+let launchAccessToken: string | null = null;
 const getDiscordSdk = () =>
   (discordSdkPromise ??= (async () => {
     const clientId =
@@ -132,7 +135,15 @@ const getDiscordSdk = () =>
       ),
     ]);
     return sdk;
-  })());
+  })().catch((e) => {
+    discordSdkPromise = null; // let the next call try again
+    throw e;
+  }));
+/** Discord SDK errors are objects like {code, message}; make them readable. */
+const sdkError = (e: unknown) =>
+  e && typeof e === "object" && "message" in e
+    ? String((e as { message: unknown }).message)
+    : String(e);
 export async function initializeDiscord(): Promise<DiscordStatus> {
   if (!isDiscordActivity())
     return { status: "browser", message: "Playing on the web" };
@@ -153,6 +164,7 @@ export async function initializeDiscord(): Promise<DiscordStatus> {
       "/discord/token",
       { code },
     );
+    launchAccessToken = access_token;
     const auth = await sdk.commands.authenticate({ access_token });
     return {
       status: "connected",
@@ -168,20 +180,29 @@ export async function initializeDiscord(): Promise<DiscordStatus> {
     };
   }
 }
-/** Ask Discord (in-app, no redirect) for a one-time code to sign in with.
- *  Adds the email scope so an existing *doku account with the same verified
- *  email is found; Discord shows its own permission prompt. */
-export async function discordSignInCode(): Promise<string> {
+/** Credentials for signing in from inside the Activity, without a redirect.
+ *  First asks Discord (in-app prompt) for identify + email, so an existing
+ *  *doku account with the same verified email is found. If Discord refuses
+ *  that, falls back to the launch-time authorization (identify only). */
+export async function discordSignIn(): Promise<{ code: string } | { access_token: string }> {
   const clientId =
     import.meta.env.VITE_DISCORD_CLIENT_ID || "1548073007950602303";
-  const sdk = await getDiscordSdk();
-  const { code } = await sdk.commands.authorize({
-    client_id: clientId,
-    response_type: "code",
-    state: "",
-    scope: ["identify", "email"],
-  });
-  return code;
+  let reason = "";
+  try {
+    const sdk = await getDiscordSdk();
+    const { code } = await sdk.commands.authorize({
+      client_id: clientId,
+      response_type: "code",
+      state: "",
+      scope: ["identify", "email"],
+    });
+    return { code };
+  } catch (e) {
+    reason = sdkError(e);
+    console.warn("*doku: Discord authorize for sign-in failed:", e);
+  }
+  if (launchAccessToken) return { access_token: launchAccessToken };
+  throw new Error(`Discord sign-in didn’t finish${reason ? ` (${reason})` : ""}. Please try again.`);
 }
 export async function shareDiscordChallenge(
   challengeId: string,

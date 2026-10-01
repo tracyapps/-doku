@@ -279,11 +279,32 @@ html[data-doku-theme="rounded"] .bottom-sheet {
   --jigsaw-7: #dfeef1;
   --jigsaw-8: #eed3e5;
 }
+/* Jigsaw: the bevel highlight stays, but the fill leans into each
+   region's own hue so highlighted cells keep their piece identity. */
 .doku[data-theme="rounded"] .board[data-variant="jigsaw"] .cell.matching {
-  background-color: #73b0ff;
+  background: color-mix(in srgb, var(--region-fill) 45%, #73b0ff);
+  color: #fff;
+  text-shadow: 0 1px 1px #174d9b;
+  box-shadow:
+    inset 0 0 0 2px #73b0ff,
+    inset 0 3px 0 #beddff,
+    inset 0 -4px 0 #2860b0;
 }
 .doku[data-theme="rounded"] .board[data-variant="jigsaw"] .cell.selected {
-  background-color: #2d79ef;
+  background: color-mix(in srgb, var(--region-fill) 65%, #2d79ef);
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 2px #2d79ef,
+    inset 0 3px 0 #8ec0ff,
+    inset 0 -4px 0 #174eac;
+}
+.doku[data-theme="rounded"] .board[data-variant="jigsaw"]
+  .cell.selected.matching {
+  background: color-mix(in srgb, var(--region-fill) 45%, #73b0ff);
+  box-shadow:
+    inset 0 0 0 2px #174eac,
+    inset 0 3px 0 #beddff,
+    inset 0 -4px 0 #2860b0;
 }
 .doku[data-theme="rounded"] {
   --theme-value-weight: 700;

@@ -1303,6 +1303,61 @@ details p {
   border: 0;
   height: 10px;
 }
+.menu-list .menu-section {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+  padding: 16px 0 2px;
+}
+.menu-list .menu-section:first-child {
+  padding-top: 2px;
+}
+/* Labeled two-option segmented control (Cell first | Value first). */
+.segmented {
+  display: flex;
+  gap: 4px;
+  background: var(--surface-soft);
+  border: 1px solid var(--grid-line);
+  border-radius: 12px;
+  padding: 4px;
+}
+.segmented > button {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 9px;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+.segmented > button[aria-checked="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.input-mode-card {
+  border: 1px solid var(--grid-line);
+  border-radius: 12px;
+  padding: 14px 14px 12px;
+}
+.input-mode-card .input-mode-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.input-mode-card small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 10px;
+}
 .dialog-actions {
   display: flex;
   gap: 12px;
@@ -1547,12 +1602,16 @@ html[data-doku-theme] body {
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.22));
 }
 .cell.hue-filled.matching {
-  box-shadow: inset 0 0 0 3px var(--text) !important;
+  /* Double ring, inverse of the selected state: white inside, dark outside,
+     so it stays crisp over any of the nine hue fills. */
+  box-shadow:
+    inset 0 0 0 3px #ffffff,
+    inset 0 0 0 6px color-mix(in srgb, #101827 82%, var(--hue-color)) !important;
 }
 .cell.hue-filled.selected {
   box-shadow:
     inset 0 0 0 3px #101827,
-    inset 0 0 0 5px #fff !important;
+    inset 0 0 0 6px #ffffff !important;
 }
 .cell.hue-filled.error::after {
   content: "!";
@@ -1703,15 +1762,18 @@ html[data-doku-theme] .sheet-handle {
   font-size: clamp(42px, 12vw, 50px);
 }
 .doku {
-  --jigsaw-0: #151e28;
-  --jigsaw-1: #202d37;
-  --jigsaw-2: #2b3146;
-  --jigsaw-3: #141c1f;
-  --jigsaw-4: #373953;
-  --jigsaw-5: #1f2b2d;
-  --jigsaw-6: #3b4c68;
-  --jigsaw-7: #28273f;
-  --jigsaw-8: #33414c;
+  /* Nine distinct region hues so every jigsaw piece reads as its own shape.
+     Dark and muted to keep the night mood, but each hue (and lightness step)
+     is far enough from its neighbors that adjacent regions never merge. */
+  --jigsaw-0: #24344a;
+  --jigsaw-1: #1a3c40;
+  --jigsaw-2: #22402c;
+  --jigsaw-3: #3a3a22;
+  --jigsaw-4: #4a3428;
+  --jigsaw-5: #452430;
+  --jigsaw-6: #3b2242;
+  --jigsaw-7: #262b52;
+  --jigsaw-8: #3a5468;
 }
 /* Jigsaw region-boundary outline: each boundary edge gets a couple-px band of
    that cell's own region color, inset from the shared edge by a small gap on
@@ -1745,47 +1807,69 @@ html[data-doku-theme] .sheet-handle {
     bottom var(--region-gap) left 0,
     top 0 left var(--region-gap);
 }
-.board[data-variant="jigsaw"] .cell[data-region="0"] {
+/* Prefixed with .doku so these outrank every theme's classic-board
+   `.cell.region-1` checkerboard rule (which used to repaint odd jigsaw
+   regions in the checkerboard color, collapsing several regions into one
+   fill). Theme files that want to restyle jigsaw cells still can — they
+   simply need their own [data-variant="jigsaw"] scope, as comic does. */
+.doku .board[data-variant="jigsaw"] .cell[data-region="0"] {
   --region-fill: var(--jigsaw-0);
   background-color: var(--region-fill);
 }
-.board[data-variant="jigsaw"] .cell[data-region="1"] {
+.doku .board[data-variant="jigsaw"] .cell[data-region="1"] {
   --region-fill: var(--jigsaw-1);
   background-color: var(--region-fill);
 }
-.board[data-variant="jigsaw"] .cell[data-region="2"] {
+.doku .board[data-variant="jigsaw"] .cell[data-region="2"] {
   --region-fill: var(--jigsaw-2);
   background-color: var(--region-fill);
 }
-.board[data-variant="jigsaw"] .cell[data-region="3"] {
+.doku .board[data-variant="jigsaw"] .cell[data-region="3"] {
   --region-fill: var(--jigsaw-3);
   background-color: var(--region-fill);
 }
-.board[data-variant="jigsaw"] .cell[data-region="4"] {
+.doku .board[data-variant="jigsaw"] .cell[data-region="4"] {
   --region-fill: var(--jigsaw-4);
   background-color: var(--region-fill);
 }
-.board[data-variant="jigsaw"] .cell[data-region="5"] {
+.doku .board[data-variant="jigsaw"] .cell[data-region="5"] {
   --region-fill: var(--jigsaw-5);
   background-color: var(--region-fill);
 }
-.board[data-variant="jigsaw"] .cell[data-region="6"] {
+.doku .board[data-variant="jigsaw"] .cell[data-region="6"] {
   --region-fill: var(--jigsaw-6);
   background-color: var(--region-fill);
 }
-.board[data-variant="jigsaw"] .cell[data-region="7"] {
+.doku .board[data-variant="jigsaw"] .cell[data-region="7"] {
   --region-fill: var(--jigsaw-7);
   background-color: var(--region-fill);
 }
-.board[data-variant="jigsaw"] .cell[data-region="8"] {
+.doku .board[data-variant="jigsaw"] .cell[data-region="8"] {
   --region-fill: var(--jigsaw-8);
   background-color: var(--region-fill);
 }
+/* Jigsaw highlights are tinted toward each cell's own region hue (region
+   fill mixed with the accent) instead of a flat accent slab, so a
+   highlighted cell still shows which piece it belongs to and region
+   boundaries stay legible through the highlight. Themes with their own
+   highlight identity (retro, web 2.0, glass, comic) override these with
+   the same mixing technique using their own anchor colors. */
 .board[data-variant="jigsaw"] .cell.matching {
-  background-color: var(--accent);
+  background-color: color-mix(in srgb, var(--region-fill) 55%, var(--accent));
+  color: var(--text);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 .board[data-variant="jigsaw"] .cell.selected {
-  background-color: var(--accent-soft);
+  background-color: color-mix(in srgb, var(--region-fill) 72%, var(--accent));
+  color: var(--text);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+/* The square you just filled is selected *and* matching: the brighter
+   matching tint must win, with a text-colored ring to mark the cursor —
+   or dark themes show a dark number on a dark accent-soft fill. */
+.board[data-variant="jigsaw"] .cell.selected.matching {
+  background-color: color-mix(in srgb, var(--region-fill) 55%, var(--accent));
+  box-shadow: inset 0 0 0 2px var(--text);
 }
 .cell.given .cell-value,
 .cell.given > .symbol {

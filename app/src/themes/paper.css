@@ -21,15 +21,17 @@
   color: #705caf;
 }
 .doku[data-theme="paper"] {
-  --jigsaw-0: #e4ddee;
+  /* Soft ink-wash region tints — gentle, but each a different wash so
+     regions stay separable. */
+  --jigsaw-0: #e6d9ef;
   --jigsaw-1: #d7eae0;
   --jigsaw-2: #f0e5e0;
-  --jigsaw-3: #dde4ee;
+  --jigsaw-3: #d8e2f5;
   --jigsaw-4: #ede7d4;
-  --jigsaw-5: #e4eff1;
-  --jigsaw-6: #eddee8;
-  --jigsaw-7: #eff2e9;
-  --jigsaw-8: #e6d4d1;
+  --jigsaw-5: #d9edf5;
+  --jigsaw-6: #f2d3e5;
+  --jigsaw-7: #e7f2da;
+  --jigsaw-8: #e2c9c4;
 }
 .doku[data-theme="paper"] {
   --selected-note-color: #242938;

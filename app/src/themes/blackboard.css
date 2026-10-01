@@ -113,14 +113,6 @@
   text-shadow: none;
 }
 
-.doku[data-theme="blackboard"] .board[data-variant="jigsaw"] .cell.matching {
-  background-color: var(--accent);
-}
-
-.doku[data-theme="blackboard"] .board[data-variant="jigsaw"] .cell.selected {
-  background-color: var(--accent-soft);
-}
-
 /* Controls read as chalk outlines on the slate. */
 .doku[data-theme="blackboard"] .icon-button,
 .doku[data-theme="blackboard"] .labeled-icon > span,
@@ -211,15 +203,17 @@ html[data-doku-theme="blackboard"] .bottom-sheet {
 }
 
 .doku[data-theme="blackboard"] {
-  --jigsaw-0: #1f2b26;
-  --jigsaw-1: #243230;
-  --jigsaw-2: #28352c;
-  --jigsaw-3: #1c2a2b;
-  --jigsaw-4: #2b3630;
-  --jigsaw-5: #20302e;
-  --jigsaw-6: #2f3a30;
-  --jigsaw-7: #22302f;
-  --jigsaw-8: #263327;
+  /* Chalk-rubbing region fills: one hue per region, each a clearly
+     different rubbing so pieces read separately on the slate. */
+  --jigsaw-0: #22322c;
+  --jigsaw-1: #17303c;
+  --jigsaw-2: #283a26;
+  --jigsaw-3: #40351f;
+  --jigsaw-4: #3b2b33;
+  --jigsaw-5: #164046;
+  --jigsaw-6: #3a4a24;
+  --jigsaw-7: #352640;
+  --jigsaw-8: #2d4152;
 }
 
 .doku[data-theme="blackboard"] {

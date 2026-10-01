@@ -19,15 +19,17 @@
   --dialog-bg: #172536;
 }
 .doku[data-theme="night"] {
-  --jigsaw-0: #151e28;
-  --jigsaw-1: #202d37;
-  --jigsaw-2: #2b3146;
-  --jigsaw-3: #141c1f;
-  --jigsaw-4: #373953;
-  --jigsaw-5: #1f2b2d;
-  --jigsaw-6: #3b4c68;
-  --jigsaw-7: #28273f;
-  --jigsaw-8: #33414c;
+  /* Same nine distinct hues as the base fallback: dark and muted, but each
+     region a different hue so shapes stay separable at a glance. */
+  --jigsaw-0: #24344a;
+  --jigsaw-1: #1a3c40;
+  --jigsaw-2: #22402c;
+  --jigsaw-3: #3a3a22;
+  --jigsaw-4: #4a3428;
+  --jigsaw-5: #452430;
+  --jigsaw-6: #3b2242;
+  --jigsaw-7: #262b52;
+  --jigsaw-8: #3a5468;
 }
 .doku[data-theme="night"] {
   --theme-value-font: "DM Sans", sans-serif;

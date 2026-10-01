@@ -20,15 +20,18 @@
   color: #ffe96b;
 }
 .doku[data-theme="contrast"] {
+  /* Near-black fills with a hue step per region; the white region lines
+     carry the boundaries, the hue step keeps neighboring fills from
+     reading as one shape when lines are crossed by highlights. */
   --jigsaw-0: #1a1605;
-  --jigsaw-1: #092025;
-  --jigsaw-2: #1e1405;
-  --jigsaw-3: #180920;
-  --jigsaw-4: #081c12;
-  --jigsaw-5: #250912;
-  --jigsaw-6: #0d1c2b;
-  --jigsaw-7: #213211;
-  --jigsaw-8: #3d1f0f;
+  --jigsaw-1: #0a2a30;
+  --jigsaw-2: #2e2308;
+  --jigsaw-3: #1d0a28;
+  --jigsaw-4: #0a2416;
+  --jigsaw-5: #2f0c16;
+  --jigsaw-6: #0e2236;
+  --jigsaw-7: #2a3f16;
+  --jigsaw-8: #4a2512;
 }
 .doku[data-theme="contrast"] .cell.given .cell-lock {
   display: block;

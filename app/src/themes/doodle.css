@@ -170,11 +170,21 @@ html[data-doku-theme="doodle"] .bottom-sheet {
   --jigsaw-7: #d9ece9dc;
   --jigsaw-8: #e5e5dedc;
 }
+/* Jigsaw: highlighter strokes tint toward each region's own wash so
+   pieces stay distinguishable through a highlight. */
 .doku[data-theme="doodle"] .board[data-variant="jigsaw"] .cell.matching {
-  background-color: #f4d468;
+  background-color: color-mix(in srgb, var(--region-fill) 52%, #f4d468);
+  color: #26292e;
+  box-shadow: inset 0 0 0 2px #f4d468;
 }
 .doku[data-theme="doodle"] .board[data-variant="jigsaw"] .cell.selected {
-  background-color: #f2c9bf;
+  background-color: color-mix(in srgb, var(--region-fill) 70%, #f2c9bf);
+  box-shadow: inset 0 0 0 3px #c83f35;
+}
+.doku[data-theme="doodle"] .board[data-variant="jigsaw"]
+  .cell.selected.matching {
+  background-color: color-mix(in srgb, var(--region-fill) 52%, #f4d468);
+  box-shadow: inset 0 0 0 2px #292d31;
 }
 .doku[data-theme="doodle"] {
   --theme-value-font: "Comic Sans MS", "Bradley Hand", cursive;

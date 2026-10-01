@@ -20,15 +20,17 @@
   color: #ecc0f7;
 }
 .doku[data-theme="plum"] {
-  --jigsaw-0: #211f33;
-  --jigsaw-1: #143758;
-  --jigsaw-2: #16275c;
-  --jigsaw-3: #571a4c;
-  --jigsaw-4: #2f2a63;
-  --jigsaw-5: #4a0e32;
-  --jigsaw-6: #303670;
-  --jigsaw-7: #2b1532;
-  --jigsaw-8: #331b54;
+  /* Jewel-toned region fills — one gem per region, spread across hue and
+     lightness so adjacent pieces never merge on the dark plum board. */
+  --jigsaw-0: #2b2447;
+  --jigsaw-1: #17406e;
+  --jigsaw-2: #11515e;
+  --jigsaw-3: #631c56;
+  --jigsaw-4: #3a3585;
+  --jigsaw-5: #701540;
+  --jigsaw-6: #1c5c46;
+  --jigsaw-7: #6b4a1f;
+  --jigsaw-8: #3f2166;
 }
 .doku[data-theme="plum"] {
   --selected-note-color: #fff;

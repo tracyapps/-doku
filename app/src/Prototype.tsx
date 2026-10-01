@@ -3772,6 +3772,112 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
         title="Make it yours"
         onClose={() => setSheet(null)}
       >
+        <h3>How you play</h3>
+        <div className="input-mode-card">
+          <div className="input-mode-head">
+            <span>Filling order</span>
+            <button
+              type="button"
+              className="help-button"
+              popoverTarget="input-order-help"
+              aria-label="What do cell first and value first mean?"
+            >
+              <Question size={16} weight="bold" />
+            </button>
+          </div>
+          <div className="segmented" role="radiogroup" aria-label="Filling order">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={settings.input === "cell"}
+              onClick={() => {
+                if (settings.input !== "cell") {
+                  setPreference("input", "cell");
+                  clearSelection();
+                }
+              }}
+            >
+              Cell first
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={settings.input === "value"}
+              onClick={() => {
+                if (settings.input !== "value") {
+                  setPreference("input", "value");
+                  clearSelection();
+                }
+              }}
+            >
+              Value first
+            </button>
+          </div>
+          <small>
+            {settings.input === "value"
+              ? "Choose a value, then tap squares. Tap the value again to put it down."
+              : "Choose a square, then a value."}
+          </small>
+          <div
+            id="input-order-help"
+            popover="auto"
+            role="dialog"
+            className="help-popover"
+            aria-label="Cell first and value first"
+          >
+            <p>
+              <strong>Cell first</strong> (off): tap a square, then a value.
+            </p>
+            <p>
+              <strong>Value first</strong> (on): tap a value, then tap as many
+              squares as you like. Tap the value again to put it down.
+            </p>
+            <InputModeDemo />
+            <button
+              type="button"
+              className="secondary"
+              popoverTarget="input-order-help"
+              popoverTargetAction="hide"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+        <Toggle
+          label="Highlight matching values"
+          value={settings.matches}
+          onChange={(v) => setPreference("matches", v)}
+        />
+        <Toggle
+          label="Show conflicts"
+          description="Highlight duplicates in rows, columns, or regions."
+          value={settings.conflicts}
+          onChange={(v) => setPreference("conflicts", v)}
+        />
+        <Toggle
+          label="Auto-check entries"
+          description="Show an incorrect pen entry immediately. Counts as assistance."
+          value={settings.autocheck}
+          onChange={(v) => setPreference("autocheck", v)}
+        />
+        <Toggle
+          label="Automatically remove notes"
+          description="Clear matching candidates from related squares."
+          value={settings.removeNotes}
+          onChange={(v) => setPreference("removeNotes", v)}
+        />
+        <Toggle
+          label="Little celebrations"
+          description="Highlight completed rows, columns, and regions."
+          value={settings.celebrations}
+          onChange={(v) => setPreference("celebrations", v)}
+        />
+        <Toggle
+          label="Show timer by default"
+          description="For new games. Tap the current timer anytime."
+          value={settings.timer}
+          onChange={(v) => setPreference("timer", v)}
+        />
         <h3>Appearance</h3>
         <div className="theme-options">
           {themeOptions.map((t) => (
@@ -3785,27 +3891,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             </button>
           ))}
         </div>
-        <h3>Your name</h3>
-        <label className="setting-stack">
-          Challenge name
-          {preview ? (
-            <KeyboardInput
-              aria-label="Challenge name"
-              value={playerName}
-              maxLength={40}
-              placeholder="A fellow puzzler"
-              onChange={(e) => setPlayerName(e.target.value)}
-            />
-          ) : (
-            <input
-              aria-label="Challenge name"
-              value={playerName}
-              maxLength={40}
-              placeholder="A fellow puzzler"
-              onChange={(e) => setPlayerName(e.target.value)}
-            />
-          )}
-        </label>
+        <h3>Numbers &amp; notes</h3>
         <label className="setting-stack">
           Number size{" "}
           <input
@@ -3863,6 +3949,27 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             <option value={700}>Bold</option>
           </select>
         </label>
+        <h3>Your name</h3>
+        <label className="setting-stack">
+          Challenge name
+          {preview ? (
+            <KeyboardInput
+              aria-label="Challenge name"
+              value={playerName}
+              maxLength={40}
+              placeholder="A fellow puzzler"
+              onChange={(e) => setPlayerName(e.target.value)}
+            />
+          ) : (
+            <input
+              aria-label="Challenge name"
+              value={playerName}
+              maxLength={40}
+              placeholder="A fellow puzzler"
+              onChange={(e) => setPlayerName(e.target.value)}
+            />
+          )}
+        </label>
         <h3>Result displays</h3>
         <p className="muted setting-intro">
           Choose which views appear after you finish a puzzle.
@@ -3881,102 +3988,6 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             }
           />
         ))}
-        <h3>Gameplay</h3>
-        <div className="setting-row input-order-setting">
-          <span>
-            <span className="setting-label">
-              Value first
-              <button
-                type="button"
-                className="help-button"
-                popoverTarget="input-order-help"
-                aria-label="What do cell first and value first mean?"
-              >
-                <Question size={16} weight="bold" />
-              </button>
-            </span>
-            <small>
-              {settings.input === "value"
-                ? "Choose a value, then tap squares."
-                : "Off: choose a square, then a value."}
-            </small>
-          </span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={settings.input === "value"}
-            aria-label="Value first"
-            onClick={() => {
-              setPreference(
-                "input",
-                settings.input === "value" ? "cell" : "value",
-              );
-              clearSelection();
-            }}
-            className={`switch ${settings.input === "value" ? "on" : ""}`}
-          >
-            <span />
-          </button>
-          <div
-            id="input-order-help"
-            popover="auto"
-            role="dialog"
-            className="help-popover"
-            aria-label="Cell first and value first"
-          >
-            <p>
-              <strong>Cell first</strong> (off): tap a square, then a value.
-            </p>
-            <p>
-              <strong>Value first</strong> (on): tap a value, then tap as many
-              squares as you like. Tap the value again to put it down.
-            </p>
-            <InputModeDemo />
-            <button
-              type="button"
-              className="secondary"
-              popoverTarget="input-order-help"
-              popoverTargetAction="hide"
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-        <Toggle
-          label="Show timer by default"
-          description="For new games. Tap the current timer anytime."
-          value={settings.timer}
-          onChange={(v) => setPreference("timer", v)}
-        />
-        <Toggle
-          label="Highlight matching values"
-          value={settings.matches}
-          onChange={(v) => setPreference("matches", v)}
-        />
-        <Toggle
-          label="Show conflicts"
-          description="Highlight duplicates in rows, columns, or regions."
-          value={settings.conflicts}
-          onChange={(v) => setPreference("conflicts", v)}
-        />
-        <Toggle
-          label="Auto-check entries"
-          description="Show an incorrect pen entry immediately. Counts as assistance."
-          value={settings.autocheck}
-          onChange={(v) => setPreference("autocheck", v)}
-        />
-        <Toggle
-          label="Automatically remove notes"
-          description="Clear matching candidates from related squares."
-          value={settings.removeNotes}
-          onChange={(v) => setPreference("removeNotes", v)}
-        />
-        <Toggle
-          label="Little celebrations"
-          description="Highlight completed rows, columns, and regions."
-          value={settings.celebrations}
-          onChange={(v) => setPreference("celebrations", v)}
-        />
       </Modal>
       <Modal
         preview={preview}
@@ -3985,6 +3996,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
         onClose={() => setSheet(null)}
       >
         <div className="menu-list">
+          <h3 className="menu-section">Playing aids</h3>
           <button
             onClick={() => {
               setSession((s) => (s ? restore(s, true) : s));
@@ -4038,7 +4050,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           >
             <Eye /> Reveal this square
           </button>
-          <hr />
+          <h3 className="menu-section">Around *doku</h3>
           <button onClick={friends}>
             <Users /> Friends’ results
           </button>
@@ -4057,12 +4069,14 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           <button onClick={() => go("roadmap")}>
             <RoadHorizon /> Roadmap & updates
           </button>
+          <h3 className="menu-section">Feedback</h3>
           <button onClick={() => feedback("suggestion")}>
             <ChatCircleDots /> Suggest an idea
           </button>
           <button onClick={() => feedback("bug")}>
             <Bug /> Report a bug
           </button>
+          <h3 className="menu-section">This puzzle</h3>
           <button
             onClick={() => {
               setSheet(null);

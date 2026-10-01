@@ -165,27 +165,40 @@ html[data-doku-theme="glass"] .bottom-sheet {
   }
 }
 .doku[data-theme="glass"] {
-  --jigsaw-0: #ffffff10;
-  --jigsaw-1: #78b8ff24;
-  --jigsaw-2: #75eff41d;
-  --jigsaw-3: #df85ff20;
-  --jigsaw-4: #7dffa51c;
-  --jigsaw-5: #ffbd721d;
-  --jigsaw-6: #9f8cff22;
-  --jigsaw-7: #ff7f9f1c;
-  --jigsaw-8: #d8f8ff18;
+  /* Tinted-glass region fills: same frosted translucency, but each hue
+     stepped up enough that neighboring panes read as separate pieces. */
+  --jigsaw-0: #ffffff26;
+  --jigsaw-1: #78b8ff3d;
+  --jigsaw-2: #75eff432;
+  --jigsaw-3: #df85ff33;
+  --jigsaw-4: #7dffa52e;
+  --jigsaw-5: #ffbd7231;
+  --jigsaw-6: #9f8cff3a;
+  --jigsaw-7: #ff7f9f2e;
+  --jigsaw-8: #d8f8ff26;
 }
+/* Jigsaw: highlights tint toward each pane's own hue (region fill mixed
+   with the cyan anchor) so highlighted cells keep their piece identity. */
 .doku[data-theme="glass"] .board[data-variant="jigsaw"] .cell.matching {
-  background-color: #75eff43d;
+  background-color: color-mix(in srgb, var(--region-fill) 55%, #75eff4);
+  color: var(--accent-ink);
   box-shadow:
     inset 0 0 0 1px #75eff4,
     0 0 16px 2px color-mix(in srgb, var(--region-fill, #75eff4) 70%, #75eff4);
 }
 .doku[data-theme="glass"] .board[data-variant="jigsaw"] .cell.selected {
-  background-color: #75eff44d;
+  background-color: color-mix(in srgb, var(--region-fill) 75%, #75eff4);
+  color: var(--text);
   box-shadow:
     inset 0 0 0 2px #bffcff,
     0 0 20px 3px color-mix(in srgb, var(--region-fill, #75eff4) 70%, #75eff4);
+}
+.doku[data-theme="glass"] .board[data-variant="jigsaw"]
+  .cell.selected.matching {
+  background-color: color-mix(in srgb, var(--region-fill) 55%, #75eff4);
+  box-shadow:
+    inset 0 0 0 2px #fff,
+    0 0 16px 2px color-mix(in srgb, var(--region-fill, #75eff4) 70%, #75eff4);
 }
 .doku[data-theme="glass"] {
   --theme-value-weight: 500;

@@ -1,6 +1,6 @@
 # Theme & style editing guide
 
-For anyone who knows CSS/SCSS well and doesn't want to touch the React/TypeScript logic. Everything in this doc has been checked against the actual code as of Sep 2026.
+For anyone who knows CSS/SCSS well and doesn't want to touch the React/TypeScript logic. Everything in this doc has been checked against the actual code as of October 7, 2026.
 
 ## The 30-second version
 
@@ -25,9 +25,12 @@ That style guide page already exists in the codebase for exactly this purpose ("
 | `src/themes/plum.css` | Plum |
 | `src/themes/retro.css` | Retro |
 | `src/themes/comic.css` | Comic Book |
+| `src/themes/comic-dark.css` | Comic Book Dark |
 | `src/themes/doodle.css` | Doodle |
 | `src/themes/glass.css` | Glass |
 | `src/themes/rounded.css` | Web 2.0 ("rounded") |
+| `src/themes/rounded-dark.css` | Web 2.0 Dark |
+| `src/themes/blackboard.css` | Blackboard |
 
 Each theme file is self-contained — every rule in `retro.css`, for example, is scoped to `[data-theme=retro]` (or `.theme-retro` / `.theme-peek-retro` for the small swatch/preview chips), so it can never affect any other theme regardless of import order. You will do the vast majority of your work by opening one file in `src/themes/` and editing just that.
 
@@ -52,13 +55,16 @@ Every theme sets the same set of CSS custom properties; components read from the
 |---|---|
 | `--bg` | Page background |
 | `--surface` / `--surface-soft` | Card/button backgrounds, alternating board regions |
-| `--text` / `--muted` | Primary and secondary text |
+| `--text` / `--muted` | Primary and secondary text on the app background |
+| `--surface-ink` / `--surface-muted` | Primary and secondary text on `--surface`; defaults to text/muted, overridden for Retro yellow panels |
+| `--accent-soft-ink` / `--accent-soft-muted` | Foregrounds on chosen type/level buttons; Comic Dark yellow uses dark ink |
+| `--link-ink` | Readable small links/status text on the page; may differ from the decorative accent |
 | `--accent` / `--accent-ink` / `--accent-soft` | The theme's signature color, and the text color that sits on top of it |
 | `--grid-line` / `--region-line` | Board borders (region-line is the bolder 3×3 box divider) |
 | `--error` | Error/wavy-underline text color |
 | `--dialog-bg` | Modal and bottom-sheet background |
 | `--theme-value-font` / `--theme-value-weight` | The theme's default number/keypad typeface and weight (a player's explicit Settings choice overrides this) |
-| `--selected-note-color` | Note color used when a selected cell/key is a dark fill (needed for contrast) |
+| `--selected-note-color` / `--matching-note-color` | Classic selected/matching pencil ink; matching defaults to accent-ink. Jigsaw notes follow the cell foreground |
 | `--active-key-bg` / `--active-key-ink` | Active keypad button color (defaults to accent; Doodle overrides it) |
 | `--jigsaw-0` … `--jigsaw-8` | The 9 region fill colors used only in the jigsaw board variant |
 
@@ -87,24 +93,11 @@ Each file in `src/themes/` has been run through Prettier, so rules are on their 
 
 The in-game puzzle header, timer, and similar chrome are **not theme-specific** — they're shared layout, so they live in `src/themes/base.css`, and changing them affects every theme at once unless you scope the change to one `[data-theme=x]`.
 
-Key selectors, found under the `Compact game masthead` comment and nearby in `base.css`:
+Current header selectors are `.game-header`, `.game-home`, `.game-title`, `.game-status-center`, and `.game-header-actions`. The active compact layout is near the end of `base.css`; older `.game-heading` rules remain for other/reference contexts. Edit the final applicable rule rather than an earlier overridden declaration.
 
-| What | Selector | Current value |
-|---|---|---|
-| Puzzle title on the game screen | `.game-heading h1` | `font-size: clamp(44px, 6.5vw, 58px)` — fluid, scales with viewport width between those two limits |
-| Same, inside the phone-frame preview | `.in-preview .game-heading h1` | `font-size: clamp(42px, 12vw, 50px)` |
-| Same, on narrow/mobile web | `.game-heading h1` inside `@media (max-width: 700px)` | `font-size: 54px` |
-| Space below the header | `.game-header` | `margin-bottom: 20px` (12px in preview/mobile) |
-| In-game compact timer chip | `.doku .game-meta .timer` | `min-height: 27px; padding: 3px 7px; font-size: 11px` |
-| Round icon buttons (back, settings) | `.icon-button` | `46×46px` (39px preview, 41px mobile) |
-| Page titles elsewhere (history, settings, etc.) | `.page-title` | `font: 800 38px/1.1 Outfit` (34px mobile, 32px preview) |
-| Marketing homepage headline | `.home-hero h1` | `font-size: clamp(44px, 5vw, 68px)` |
+On mobile web the game title uses `clamp(16px, 5vw, 26px)`, with tighter header/timer spacing below 360px. In the framed preview the title is 20px even when the surrounding desktop browser is wide. Keep title, timer, and actions separate at 320px and test uppercase Retro/Comic jigsadoku names. The three board variants are all nine equal tracks; theme overrides must preserve that geometry.
 
-Note there are two rules for `.game-heading h1` in `base.css` — an older fixed-size one near the top, and the `clamp()` one under the masthead comment. The later one wins (same specificity, later in the file), so that's the one actually controlling size — edit that one.
-
-**Testing without exact target sizes:** since the header already uses `clamp(min, preferred, max)`, you can just resize your browser window (or drag with DevTools' device toolbar open) while the dev server is running and watch the header scale live, then dial in `clamp()` values instead of guessing a single fixed size. This works for any size you're adding, not just existing ones.
-
-To make a layout change theme-specific instead of global, don't touch `base.css` — add it to that theme's own file instead: `.doku[data-theme=comic] .game-heading h1{font-size:70px}` in `src/themes/comic.css`.
+For jigsaw cells, change `background-color`, not the `background` shorthand, so the shared region-edge bands survive. Do not apply `border-width: 0 !important` to jigsaw: those inline borders carry the irregular piece boundaries. Preserve the nine region fills and test numbers, givens, errors, selected/matching states, and pencil notes against each fill.
 
 ## Recipe C — create a brand-new theme
 
@@ -146,8 +139,14 @@ This is the one recipe that touches `Prototype.tsx`, but it's two mechanical lis
 
 ## Quick answers
 
-- **Will editing CSS break anything?** No — Vite just swaps the stylesheet live; nothing reloads or resets app state. A manual browser refresh always clears up anything that looks stuck.
+- **Can editing CSS cause regressions?** Yes: specificity, shorthand resets, transparent surfaces, and selected foregrounds can break another state. Vite hot reload preserves app state; verify affected screens and all variants before handoff.
 - **Do I need `npm run dev:api` running too?** No, not for appearance work. That only powers the challenge-sharing backend; the style guide and Settings preview work without it.
 - **`npm run dev` vs `npm run dev:web`?** `dev` opens the phone-frame mobile prototype (no footer/Style-guide link — but `/styleguide/` still works if you type it directly into the address bar). `dev:web` opens the plain desktop site, matching what's actually published, with the Style guide link clickable from the homepage footer. Either hot-reloads theme CSS the same way; use whichever view you're actually designing for.
 - **Contrast reminder:** the focus ring, error text, and several component states pull directly from `--accent` and `--error`, so a new theme's accent/error colors should stay legible against its `--bg`/`--surface` the same way the existing themes do — the style guide's error/selected/matching states are the fastest way to eyeball this per theme.
 - **What happened to the old single `prototype.css`?** It's been split into `src/themes/*.css` (one file per theme, plus `base.css` for shared layout); `prototype.css` itself is now just a 10-line list of `@import`s. A full backup of the old file was kept at `src/prototype.css.pre-split.bak` in case you ever want to diff against it — safe to delete once you're comfortable with the new structure.
+
+## Audit baseline
+
+See [the October 2026 audit](STYLE-AUDIT.md) for screen/state coverage, evidence limits, and the repeatable browser collectors in `scripts/qa/`. The style guide now also includes type/level choices, notices, share links, achievements, all nine hue patterns, and selected/matching pencil states. It is a development reference, not a substitute for testing actual game screens and dialogs.
+
+For numeric text use at least 4.5:1 at small sizes, or 3:1 at large text sizes; small notes still need 4.5:1. Given values use reduced opacity only at rest and full opacity when selected/matching. Errors retain a wavy underline; Comic/Retro errors have a stable light backing so their red ink remains readable over colored regions. Keep logos/decorative bursts separate from functional copy when assessing contrast.

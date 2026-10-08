@@ -61,7 +61,7 @@ p {
   margin-top: 0;
 }
 select {
-  color: inherit;
+  color: var(--surface-ink, var(--text));
   background: var(--surface);
   border: 1px solid var(--grid-line);
   border-radius: 8px;
@@ -81,6 +81,13 @@ select {
   --region-line: #a7bbd4;
   --error: #ff9eaa;
   --dialog-bg: #172536;
+  /* A surface can be light even in a dark theme. Pair its ink explicitly,
+     including controls rendered in a portal outside .doku. */
+  --surface-ink: var(--text);
+  --surface-muted: var(--muted);
+  --accent-soft-ink: var(--text);
+  --accent-soft-muted: var(--muted);
+  --link-ink: var(--accent);
 }
 .doku {
   min-height: 100dvh;
@@ -153,11 +160,11 @@ select {
   text-decoration: none;
 }
 .main-nav a:hover {
-  color: var(--text);
-  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  color: var(--surface-ink);
+  background: var(--surface);
 }
 .main-nav a[aria-current="page"] {
-  color: var(--text);
+  color: var(--surface-ink);
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--grid-line);
 }
@@ -197,7 +204,7 @@ select {
 .account-chip {
   padding: 5px 16px 5px 5px;
   background: var(--surface);
-  color: var(--text);
+  color: var(--surface-ink);
   border: 1px solid var(--grid-line);
   max-width: 220px;
 }
@@ -291,6 +298,7 @@ select {
   height: 46px;
   border-radius: 50%;
   background: var(--surface);
+  color: var(--surface-ink);
   border: 1px solid var(--grid-line);
   padding: 0;
 }
@@ -316,6 +324,7 @@ select {
 }
 .secondary {
   background: var(--surface);
+  color: var(--surface-ink);
   border: 1px solid var(--grid-line);
 }
 .wide {
@@ -540,6 +549,7 @@ footer > span:last-child {
   min-height: 90px;
 }
 .type-option.chosen {
+  color: var(--accent-soft-ink);
   border-color: var(--accent);
   background: var(--accent-soft);
   box-shadow: 0 0 0 1px var(--accent);
@@ -580,6 +590,7 @@ footer > span:last-child {
 .level-options button {
   padding: 14px;
   background: var(--surface);
+  color: var(--surface-ink);
   border: 1px solid var(--grid-line);
   border-radius: 10px;
   text-transform: capitalize;
@@ -783,6 +794,7 @@ footer > span:last-child {
   justify-content: center;
   border-radius: 50%;
   background: var(--surface);
+  color: var(--surface-ink);
   border: 1px solid var(--grid-line);
 }
 .labeled-icon small {
@@ -828,6 +840,7 @@ footer > span:last-child {
   height: 57px;
   border-radius: 11px;
   background: var(--surface);
+  color: var(--surface-ink);
   border: 1px solid var(--grid-line);
   font: 500 32px/1 var(--value-font);
   font-variant-numeric: tabular-nums;
@@ -923,7 +936,7 @@ footer > span:last-child {
 }
 .text-button {
   background: none;
-  color: var(--accent);
+  color: var(--link-ink);
   font-size: 13px;
   margin: 12px auto;
   display: block;
@@ -1079,11 +1092,12 @@ details p {
   font-size: 13px;
   padding: 16px;
   background: var(--surface);
+  color: var(--surface-ink);
   border-radius: 10px;
   margin-top: 16px;
 }
 .success {
-  color: var(--accent);
+  color: var(--link-ink);
 }
 .instructions h2 {
   font:
@@ -1130,6 +1144,7 @@ details p {
   border-radius: 10px;
   font-size: 13px;
   background: var(--surface);
+  color: var(--surface-ink);
 }
 .toast {
   position: fixed;
@@ -1674,7 +1689,7 @@ html[data-doku-theme] body {
   padding: 10px;
   border-radius: 8px;
   background: var(--surface);
-  color: var(--text);
+  color: var(--surface-ink);
   border: 1px solid var(--grid-line);
   font-size: 14px;
   min-height: 44px;
@@ -1855,12 +1870,12 @@ html[data-doku-theme] .sheet-handle {
    highlight identity (retro, web 2.0, glass, comic) override these with
    the same mixing technique using their own anchor colors. */
 .board[data-variant="jigsaw"] .cell.matching {
-  background-color: color-mix(in srgb, var(--region-fill) 55%, var(--accent));
+  background-color: color-mix(in srgb, var(--region-fill) 85%, var(--accent));
   color: var(--text);
   box-shadow: inset 0 0 0 2px var(--accent);
 }
 .board[data-variant="jigsaw"] .cell.selected {
-  background-color: color-mix(in srgb, var(--region-fill) 72%, var(--accent));
+  background-color: color-mix(in srgb, var(--region-fill) 85%, var(--accent));
   color: var(--text);
   box-shadow: inset 0 0 0 2px var(--accent);
 }
@@ -1868,12 +1883,12 @@ html[data-doku-theme] .sheet-handle {
    matching tint must win, with a text-colored ring to mark the cursor —
    or dark themes show a dark number on a dark accent-soft fill. */
 .board[data-variant="jigsaw"] .cell.selected.matching {
-  background-color: color-mix(in srgb, var(--region-fill) 55%, var(--accent));
+  background-color: color-mix(in srgb, var(--region-fill) 85%, var(--accent));
   box-shadow: inset 0 0 0 2px var(--text);
 }
 .cell.given .cell-value,
 .cell.given > .symbol {
-  opacity: 0.68;
+  opacity: 0.82;
 }
 .cell-lock {
   display: none;
@@ -1932,7 +1947,7 @@ html[data-doku-theme] .sheet-handle {
 .doku .type-option.chosen,
 .doku .level-options button.chosen {
   background: var(--accent-soft);
-  color: var(--text);
+  color: var(--accent-soft-ink);
   border-color: var(--accent);
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -2039,13 +2054,14 @@ html[data-doku-theme] .sheet-handle {
   border: 1px solid var(--grid-line);
   border-radius: 12px;
   background: var(--surface);
+  color: var(--surface-ink);
 }
 .input-demo-card > strong,
 .input-demo-card > small {
   display: block;
 }
 .input-demo-card > small {
-  color: var(--muted);
+  color: var(--surface-muted);
   font-size: 11px;
 }
 .input-demo-stage {
@@ -2081,7 +2097,7 @@ html[data-doku-theme] .sheet-handle {
   width: 100%;
   height: 100%;
   place-items: center;
-  color: var(--accent);
+  color: var(--accent-soft-ink);
   font-size: 17px;
   opacity: 0;
 }
@@ -2096,6 +2112,7 @@ html[data-doku-theme] .sheet-handle {
   border: 1px solid var(--grid-line);
   border-radius: 8px;
   background: var(--bg);
+  color: var(--text);
   font-weight: 800;
 }
 .cell-first-demo .demo-target {
@@ -2244,7 +2261,7 @@ html[data-doku-theme] .sheet-handle {
   gap: 6px;
   padding: 0;
   background: none;
-  color: var(--accent);
+  color: var(--link-ink);
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 4px;
@@ -2286,6 +2303,7 @@ html[data-doku-theme] .sheet-handle {
   padding: 12px;
   border-radius: 14px;
   background: var(--surface);
+  color: var(--surface-ink);
   border: 1px solid var(--grid-line);
   box-shadow: 0 18px 40px #0003;
   transform: rotate(-1deg);
@@ -2417,6 +2435,7 @@ html[data-doku-theme] .sheet-handle {
 .metric-pills span {
   padding: 8px 11px;
   background: var(--surface);
+  color: var(--surface-ink);
   border: 1px solid var(--grid-line);
   border-radius: 999px;
   font-size: 12px;
@@ -2610,7 +2629,7 @@ html[data-doku-theme] .sheet-handle {
   place-items: center;
   border-radius: 999px;
   background: var(--surface);
-  color: var(--muted);
+  color: var(--surface-muted);
   font-size: 12px;
   font-weight: 700;
 }
@@ -2623,6 +2642,7 @@ html[data-doku-theme] .sheet-handle {
   border: 1px solid var(--grid-line);
   border-radius: 13px;
   background: var(--surface);
+  color: var(--surface-ink);
 }
 .roadmap-card h3 {
   margin: 0 0 8px;
@@ -2631,7 +2651,7 @@ html[data-doku-theme] .sheet-handle {
 }
 .roadmap-card > p {
   margin: 0;
-  color: var(--muted);
+  color: var(--surface-muted);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -2645,7 +2665,7 @@ html[data-doku-theme] .sheet-handle {
   border-top: 1px solid var(--grid-line);
 }
 .roadmap-card footer small {
-  color: var(--muted);
+  color: var(--surface-muted);
   font-size: 10px;
 }
 .roadmap-card footer button {
@@ -2655,7 +2675,7 @@ html[data-doku-theme] .sheet-handle {
   margin-left: auto;
   padding: 0;
   background: none;
-  color: var(--accent);
+  color: var(--surface-ink);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -2991,7 +3011,7 @@ html[data-doku-theme] .sheet-handle {
   border-radius: 999px;
   background: var(--surface);
   border: 1px solid var(--grid-line);
-  color: var(--text);
+  color: var(--surface-ink);
   font-size: 12px;
   white-space: nowrap;
   pointer-events: none;
@@ -3092,7 +3112,7 @@ html[data-doku-theme] .sheet-handle {
   border: 1px solid var(--grid-line);
   border-radius: 12px;
   background: var(--surface);
-  color: var(--text);
+  color: var(--surface-ink);
 }
 .daily-level strong {
   font-size: 16px;
@@ -3102,7 +3122,7 @@ html[data-doku-theme] .sheet-handle {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--muted);
+  color: var(--surface-muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
@@ -3239,7 +3259,7 @@ html[data-doku-theme] .sheet-handle {
   color: var(--muted);
 }
 .badge-text .badge-earned {
-  color: var(--accent);
+  color: var(--link-ink);
   font-weight: 600;
 }
 .badge-progress {
@@ -3294,7 +3314,7 @@ html[data-doku-theme] .sheet-handle {
   border: 1px solid var(--grid-line);
   border-radius: 10px;
   background: var(--surface);
-  color: var(--text);
+  color: var(--surface-ink);
   font-size: 16px; /* 16px stops iOS from zooming into the field */
 }
 .account-form > .primary {
@@ -3411,3 +3431,42 @@ html[data-doku-theme] .sheet-handle {
     margin-top: 0;
   }
 }
+
+/* Selected choice descriptions need the foreground paired with the fill. */
+.type-option.chosen small {
+  color: var(--accent-soft-muted);
+}
+/* Small phone titles must leave room for the timer and both actions,
+   including the wider uppercase jigsadoku lettering. */
+@media (max-width: 700px) {
+  .doku .game-title { font-size: clamp(16px, 5vw, 26px); }
+  .doku .game-header { gap: 5px; }
+  .doku .game-header .timer { padding-inline: 6px; font-size: 12px; }
+}
+@media (max-width: 360px) {
+  .doku .game-header { gap: 3px; }
+  .doku .game-header-actions { gap: 4px; }
+  .doku .game-header .icon-button { width: 36px; height: 36px; }
+  .doku .game-header .timer { padding-inline: 4px; font-size: 11px; }
+}
+
+.sg-preview .level-options button,
+.sg-preview .dialog-actions button { pointer-events: none; }
+/* The framed preview has a phone-sized canvas inside a wide browser. */
+.doku.in-preview .game-title { font-size: 20px; }
+.doku.in-preview .game-header { gap: 5px; }
+.doku.in-preview .game-header .timer { padding-inline: 6px; font-size: 12px; }
+
+/* Foreground pairs follow the selected surface, including pencil notes.
+   Givens stay quieter at rest, but never fade the selected value. */
+.cell.given.selected .cell-value,
+.cell.given.matching .cell-value,
+.cell.given.selected > .symbol,
+.cell.given.matching > .symbol { opacity: 1; }
+.cell.matching .notes-grid {
+  color: var(--matching-note-color, var(--accent-ink));
+}
+.board[data-variant="jigsaw"] .cell.entry:not(.error) { color: var(--text); }
+.board[data-variant="jigsaw"] .notes-grid { color: var(--text); }
+.board[data-variant="jigsaw"] .cell.selected .notes-grid,
+.board[data-variant="jigsaw"] .cell.matching .notes-grid { color: inherit; }

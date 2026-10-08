@@ -12,11 +12,14 @@
 	--text: #f1ffac;
 	--muted: #d6d9c3;
 	--accent: #df3328;
-	--accent-ink: #f0ecec;
+	--accent-ink: #fff;
+	--accent-soft-ink: #171717;
+	--accent-soft-muted: #38331d;
+	--link-ink: #ffdc46;
 	--accent-soft: #ffdc46;
 	--grid-line: #171717;
 	--region-line: #171717;
-	--error: #ed1f29;
+	--error: #ffb3b7;
 	--dialog-bg: #2f2f2e;
 	color-scheme: dark;
 }
@@ -219,9 +222,9 @@ html[data-doku-theme="comic-dark"] .sheet-title {
 	--jigsaw-0: #fffdf3;
 	--jigsaw-1: #099bd5;
 	--jigsaw-2: #ddac0c;
-	--jigsaw-3: #e52724;
+	--jigsaw-3: #f99491;
 	--jigsaw-4: #1ac840;
-	--jigsaw-5: #713bd5;
+	--jigsaw-5: #b89bed;
 	--jigsaw-6: #ea811e;
 	--jigsaw-7: #0bbdac;
 	--jigsaw-8: #e938e3;
@@ -427,3 +430,26 @@ html[data-doku-theme="comic-dark"] .sheet-title {
 .doku[data-theme="comic-dark"] .roadmap-card {
 	border-width: 2px;
 }
+/* White comic panels carry dark ink independently of the page palette. */
+.doku[data-theme="comic-dark"] .notice,
+.doku[data-theme="comic-dark"] .share-link,
+.doku[data-theme="comic-dark"] .achievement,
+.doku[data-theme="comic-dark"] .achievement p { color: #171717; }
+.doku[data-theme="comic-dark"] .pen-toggle button.chosen { background: #ffdc46; }
+
+/* Error ink needs a stable surface even over a colored jigsaw region or
+   selection. The wavy underline continues to identify the error by shape. */
+.doku[data-theme="comic-dark"] .cell.error:not(.hue-filled) .cell-value {
+  color: #a50f16;
+  background: #fffdf3;
+  border-radius: 3px;
+  padding-inline: 2px;
+}
+
+/* Destructive actions keep red as a shape/border signal with a readable
+   foreground, rather than small red copy on the teal account panel. */
+.doku[data-theme="comic-dark"] .danger-link { color: #ffb3b7; }
+.doku[data-theme="comic-dark"] button.danger { background: #b71921; color: #fff; }
+
+.doku[data-theme="comic-dark"] .board[data-variant="jigsaw"] .notes-grid,
+.doku[data-theme="comic-dark"] .board[data-variant="jigsaw"] .cell.selected .notes-grid { color: #171717; }

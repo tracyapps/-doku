@@ -12,6 +12,7 @@
   --muted: #56463d;
   --accent: #df3328;
   --accent-ink: #fff;
+  --link-ink: #860c12;
   --accent-soft: #ffdc46;
   --grid-line: #171717;
   --region-line: #171717;
@@ -373,3 +374,16 @@ html[data-doku-theme="comic"] .sheet-title {
 .doku[data-theme="comic"] .roadmap-card {
   border-width: 2px;
 }
+
+/* Error ink needs a stable surface even over a colored jigsaw region or
+   selection. The wavy underline continues to identify the error by shape. */
+.doku[data-theme="comic"] .cell.error:not(.hue-filled) .cell-value {
+  color: #a50f16;
+  background: #fffdf3;
+  border-radius: 3px;
+  padding-inline: 2px;
+}
+
+.doku[data-theme="comic"] .danger-link { color: #860c12; }
+
+.doku[data-theme="comic"] { --matching-note-color: #171717; }

@@ -227,3 +227,5 @@ html[data-doku-theme="doodle"] .bottom-sheet {
 .doku[data-theme="doodle"] .roadmap-card {
   border-width: 2px;
 }
+
+.doku[data-theme="doodle"] { --matching-note-color: #26292e; }

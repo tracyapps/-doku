@@ -754,7 +754,7 @@ function SGJigsawBoard() {
     <div
       className="board"
       data-variant="jigsaw"
-      style={{ width: 198, pointerEvents: "none" }}
+      style={{ width: "min(100%, 288px)", pointerEvents: "none" }}
     >
       {SG_JIGSAW.map((region, i) => {
         const r = Math.floor(i / 9),
@@ -795,9 +795,19 @@ function SGJigsawBoard() {
             data-region={region}
             tabIndex={-1}
             aria-hidden="true"
-            className={`cell entry ${selected ? "selected" : ""} ${matching ? "matching" : ""}`}
-            style={{ ...borders, borderStyle: "solid" } as CSSProperties}
-          />
+            className={`cell ${i % 3 === 0 ? "given" : "entry"} ${selected ? "selected" : ""} ${matching ? "matching" : ""}`}
+            style={{ ...borders, borderStyle: "solid", fontSize: 24 } as CSSProperties}
+          >
+            {selected ? (
+              <span className="notes-grid">
+                {Array.from({ length: 9 }, (_, n) => (
+                  <span key={n}>{[1, 3, 7].includes(n + 1) ? n + 1 : ""}</span>
+                ))}
+              </span>
+            ) : (
+              <span className="cell-value">{i % 9 + 1}</span>
+            )}
+          </button>
         );
       })}
     </div>
@@ -3657,6 +3667,41 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           </label>
           <div className="doku sg-preview" data-theme={sgTheme}>
             <section className="sg-section">
+              <h2>Choices &amp; surfaces</h2>
+              <div className="type-options">
+                {types.map(([v, title, desc, Icon], i) => (
+                  <button
+                    key={v}
+                    className={`type-option ${i === 0 ? "chosen" : ""}`}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    <Icon size={30} />
+                    <span><strong>{title}</strong><small>{desc}</small></span>
+                    {i === 0 && <Check size={22} />}
+                  </button>
+                ))}
+              </div>
+              <div className="level-options">
+                <button className="chosen" tabIndex={-1} aria-hidden="true">Easy</button>
+                <button tabIndex={-1} aria-hidden="true">Medium</button>
+                <button tabIndex={-1} aria-hidden="true">Hard</button>
+              </div>
+              <div className="dialog-actions">
+                <button className="primary" tabIndex={-1} aria-hidden="true">Primary action</button>
+                <button className="secondary" tabIndex={-1} aria-hidden="true">Secondary action</button>
+              </div>
+              <p className="notice">Notice text on its own surface.</p>
+              <p className="share-link">stardoku.app · a shared puzzle</p>
+              <div className="achievement">
+                <div>
+                  <strong>A puzzle completed.</strong>
+                  <p>Achievement description on its own surface.</p>
+                </div>
+              </div>
+            </section>
+            <section className="sg-section">
               <h2>Cells — classic</h2>
               <div className="sg-grid">
                 <SGItem label="given · .cell.given">
@@ -3688,12 +3733,11 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             <section className="sg-section">
               <h2>Cells — huedoku</h2>
               <div className="sg-grid">
-                <SGItem label="filled · .hue-filled (value 1)">
-                  <SGCell value={1} hue />
-                </SGItem>
-                <SGItem label="filled · .hue-filled (value 9)">
-                  <SGCell value={9} hue />
-                </SGItem>
+                {Array.from({ length: 9 }, (_, i) => (
+                  <SGItem key={i} label={`filled · hue ${i + 1}`}>
+                    <SGCell value={i + 1} hue />
+                  </SGItem>
+                ))}
                 <SGItem label="selected · .hue-filled.selected">
                   <SGCell value={4} hue selected />
                 </SGItem>
@@ -3707,6 +3751,12 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               <div className="sg-grid">
                 <SGItem label="notes · .notes-grid">
                   <SGCell notes={[2, 4, 6]} />
+                </SGItem>
+                <SGItem label="selected notes · .selected .notes-grid">
+                  <SGCell notes={[2, 4, 6]} selected />
+                </SGItem>
+                <SGItem label="selected + matching notes">
+                  <SGCell notes={[2, 4, 6]} selected matching noteMatchValue={6} />
                 </SGItem>
                 <SGItem label="notes + match · .note-match">
                   <SGCell notes={[2, 4, 6]} noteMatchValue={6} />
@@ -3747,11 +3797,8 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             </section>
             <section className="sg-section">
               <h2>Jigsaw regions</h2>
-              <div className="sg-grid">
-                <SGItem label="board[data-variant=jigsaw] · selected + matching shown">
-                  <SGJigsawBoard />
-                </SGItem>
-              </div>
+              <p className="muted">Given and entered numbers, selected notes, and a matching value.</p>
+              <SGJigsawBoard />
               <div className="sg-grid sg-grid-chips">
                 {Array.from({ length: 9 }, (_, i) => (
                   <SGItem key={i} label={`region ${i} · var(--jigsaw-${i})`}>

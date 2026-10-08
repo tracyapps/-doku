@@ -6,13 +6,14 @@
   --surface: #eee9e3;
   --surface-soft: #f5f0e9;
   --text: #242938;
-  --muted: #626775;
-  --accent: #705caf;
+  --muted: #555a69;
+  --accent: #64509e;
   --accent-ink: #fff;
   --accent-soft: #e7def8;
+  --accent-soft-muted: #555a69;
   --grid-line: #d2cbd3;
   --region-line: #666375;
-  --error: #b71e45;
+  --error: #971436;
   --dialog-bg: #faf7f1;
   color-scheme: light;
 }

@@ -12,6 +12,11 @@
   --muted: #e6cf9c;
   --accent: #ff6b3d;
   --accent-ink: #182846;
+  --surface-ink: #182846;
+  --surface-muted: #263c58;
+  --accent-soft-ink: #182846;
+  --accent-soft-muted: #263c58;
+  --link-ink: #ffb14a;
   --accent-soft: #ffe09a;
   --grid-line: #31597d;
   --region-line: #fff0bd;
@@ -57,25 +62,25 @@
 }
 .doku[data-theme="retro"] .cell.matching {
   background-color: #ffb14a;
-  color: #152a45;
+  color: #09192c;
   text-shadow: 1px 1px 0 #fff3be;
 }
 .doku[data-theme="retro"] .notes-grid .note-match {
   background: #ffb14a;
-  color: #152a45;
+  color: #09192c;
   border-radius: 1px;
   box-shadow: 1px 1px 0 #09192c;
 }
 .doku[data-theme="retro"] .cell.selected {
   background-color: #ff6b3d;
-  color: #fff;
+  color: #182846;
   box-shadow: inset 0 0 0 4px #fff0bd;
 }
 /* Jigsaw: highlights glow in each region's own hue (region fill mixed
    with the amber/orange highlight family) so pieces stay distinct. */
 .doku[data-theme="retro"] .board[data-variant="jigsaw"] .cell.matching {
-  background-color: color-mix(in srgb, var(--region-fill) 52%, #ffb14a);
-  color: #152a45;
+  background-color: color-mix(in srgb, var(--region-fill) 35%, #ffb14a);
+  color: #09192c;
   text-shadow: 1px 1px 0 #fff3be;
   box-shadow: inset 0 0 0 2px #ffb14a;
 }
@@ -86,8 +91,8 @@
 }
 .doku[data-theme="retro"] .board[data-variant="jigsaw"]
   .cell.selected.matching {
-  background-color: color-mix(in srgb, var(--region-fill) 52%, #ffb14a);
-  color: #152a45;
+  background-color: color-mix(in srgb, var(--region-fill) 35%, #ffb14a);
+  color: #09192c;
   box-shadow: inset 0 0 0 2px #fff0bd;
 }
 .doku[data-theme="retro"] .icon-button,
@@ -113,7 +118,7 @@
 }
 .doku[data-theme="retro"] .keypad > button.active {
   background: #ff6b3d;
-  color: #fff;
+  color: #182846;
   transform: translateY(5px);
   box-shadow:
     0 1px 0 #9f321e,
@@ -148,7 +153,7 @@
 }
 .doku[data-theme="retro"] .primary {
   background: #ff6b3d;
-  color: #fff;
+  color: #182846;
 }
 html[data-doku-theme="retro"] .bottom-sheet {
   border: 3px solid #fff0bd;
@@ -161,9 +166,9 @@ html[data-doku-theme="retro"] .bottom-sheet {
   --jigsaw-1: #345965;
   --jigsaw-2: #1d2135;
   --jigsaw-3: #564c2e;
-  --jigsaw-4: #46657c;
+  --jigsaw-4: #3b5b72;
   --jigsaw-5: #1e1a2d;
-  --jigsaw-6: #4d7c86;
+  --jigsaw-6: #315d66;
   --jigsaw-7: #6c4d37;
   --jigsaw-8: #312640;
 }
@@ -171,13 +176,13 @@ html[data-doku-theme="retro"] .bottom-sheet {
   --theme-value-font:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --theme-value-weight: 800;
-  --selected-note-color: #fff;
+  --selected-note-color: #182846;
 }
 .theme-peek-retro {
   --peek-cell: #244b70;
   --peek-ink: #fff4d6;
   --peek-lit: #ff6b3d;
-  --peek-lit-ink: #fff;
+  --peek-lit-ink: #182846;
   background: #173252;
   border: 3px double #fff0bd;
   border-radius: 3px;
@@ -204,3 +209,27 @@ html[data-doku-theme="retro"] .bottom-sheet {
   border-radius: 4px;
   box-shadow: 4px 4px 0 #09192c;
 }
+
+/* Mixed jigsaw selections stay dark enough for light notes; the amber
+   matching state instead uses the dark ink shared by its numbers. */
+.doku[data-theme="retro"] .board[data-variant="jigsaw"] .cell.selected .notes-grid { color: #fff4d6; }
+.doku[data-theme="retro"] .board[data-variant="jigsaw"] .cell.selected.matching .notes-grid { color: #09192c; }
+.theme-peek-retro { color: #fff4d6; }
+
+/* Error ink needs a stable surface even over a colored jigsaw region or
+   selection. The wavy underline continues to identify the error by shape. */
+.doku[data-theme="retro"] .cell.error:not(.hue-filled) .cell-value {
+  color: #a50f16;
+  background: #fffdf3;
+  border-radius: 3px;
+  padding-inline: 2px;
+}
+
+/* The yellow surface is reserved for controls; navigation and social
+   context retain the dark console panel so their quiet text stays legible. */
+.doku[data-theme="retro"] .lb-list li,
+.doku[data-theme="retro"] .player-relation { background: var(--surface-soft); }
+@media (max-width: 900px) {
+  .doku[data-theme="retro"] .site-header .main-nav { background: var(--surface-soft); }
+}
+.doku[data-theme="retro"].in-preview .site-header .main-nav { background: var(--surface-soft); }

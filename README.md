@@ -43,3 +43,11 @@ Configure these environment variables in Vercel:
 - `GITHUB_TOKEN` (optional; read-only access is sufficient)
 
 Before launch, add the final Vercel origin and Discord Activity URL mappings in the Discord Developer Portal. Never commit `.env`, `.vercel`, database credentials, a Discord client secret, or a GitHub token.
+
+## Design and native planning
+
+- [Theme editing guide](app/docs/THEMES.md)
+- [Full style audit and verification evidence](app/docs/STYLE-AUDIT.md)
+- [Shared native architecture and store plan](app/docs/NATIVE-APPS.md)
+
+The October 8 direction is a shared React Native player UI for iOS/Android/macOS and React Native for Web for browser/Discord, with one TypeScript core/theme system and the existing account service. The plan makes full history/save/settings continuity, safe migration, platform integration and reproducible builds prerequisites; this architecture has not yet been implemented.

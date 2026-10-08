@@ -52,7 +52,7 @@
   border-radius: 12px;
   border: 1px solid var(--grid-line);
   background: var(--surface);
-  color: var(--text);
+  color: var(--surface-ink);
 }
 
 .lb-list {
@@ -85,6 +85,7 @@
 }
 .lb-list li:nth-child(-n + 3) .lb-rank {
   background: var(--accent-soft);
+  color: var(--accent-soft-ink);
   border-radius: 999px;
   aspect-ratio: 1;
   display: grid;
@@ -272,4 +273,9 @@
   text-underline-offset: 3px;
 }
 .player-link:hover strong { text-decoration-color: currentColor; }
-.request-actions .text-button { color: var(--accent); }
+.request-actions .text-button { color: var(--link-ink); }
+
+/* Ellipsis needs a sized block, including the linked name and @handle. */
+.lb-name > .player-link { min-width: 0; display: block; }
+.lb-name strong,
+.lb-name small { min-width: 0; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

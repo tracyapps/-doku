@@ -7,3 +7,7 @@ playwright-report/
 .env
 .env.*
 !.env.example
+
+# Local style audit screenshots, downloads, and browser session metadata.
+output/playwright/
+.playwright-cli/

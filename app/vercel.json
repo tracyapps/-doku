@@ -5,16 +5,28 @@
   "buildCommand": "npm run db:migrate && npm run build:web",
   "outputDirectory": "dist/web",
   "redirects": [
+    { "source": "/testing", "destination": "/testing/", "permanent": true },
+    {
+      "source": "/testing/results",
+      "destination": "/testing/results/",
+      "permanent": true
+    },
     { "source": "/play", "destination": "/play/", "permanent": true },
     { "source": "/history", "destination": "/history/", "permanent": true },
     { "source": "/profile", "destination": "/profile/", "permanent": true },
-    { "source": "/leaderboard", "destination": "/leaderboard/", "permanent": true },
+    {
+      "source": "/leaderboard",
+      "destination": "/leaderboard/",
+      "permanent": true
+    },
     { "source": "/roadmap", "destination": "/roadmap/", "permanent": true },
     { "source": "/how", "destination": "/how/", "permanent": true },
     { "source": "/privacy", "destination": "/privacy/", "permanent": true },
     { "source": "/terms", "destination": "/terms/", "permanent": true }
   ],
   "rewrites": [
+    { "source": "/testing/", "destination": "/testing.html" },
+    { "source": "/testing/results/", "destination": "/testing.html" },
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/", "destination": "/web.html" },
     { "source": "/play/", "destination": "/web.html" },
@@ -29,6 +41,10 @@
     { "source": "/terms/", "destination": "/web.html" }
   ],
   "headers": [
+    {
+      "source": "/testing/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
     {
       "source": "/(.*)",
       "headers": [

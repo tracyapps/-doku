@@ -4,6 +4,7 @@
 import { createAuthClient } from "better-auth/client";
 import { magicLinkClient } from "better-auth/client/plugins";
 import { passkeyClient } from "@better-auth/passkey/client";
+import { ringLayoutVersions } from "./ringdoku";
 import type { PlayRecord } from "./records.js";
 
 const TOKEN = "doku.auth.token.v1";
@@ -75,7 +76,7 @@ export const updateProfile = (patch: Partial<Pick<Profile, "name" | "handle" | "
 
 /** Send local records the server may not have; get back the full list. */
 export const syncRecords = (records: PlayRecord[]) =>
-  api<{ records: PlayRecord[]; added: number; rejected: number }>("/me/records", { method: "POST", body: JSON.stringify({ records }) });
+  api<{ records: PlayRecord[]; added: number; rejected: number }>("/me/records", { method: "POST", body: JSON.stringify({ records, ringLayouts: ringLayoutVersions }) });
 
 export async function downloadMyData() {
   const token = readToken();

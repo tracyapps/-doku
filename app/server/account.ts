@@ -3,6 +3,8 @@
 import express from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth, accountProviders } from "./auth.js";
+import { VARIANTS } from "../src/game/engine.js";
+import { ringLayoutForSeed } from "../src/game/ringdoku.js";
 import type { PlayRecord } from "../src/game/records.js";
 import { boardRoutes, deleteFriendships, friendRoutes } from "./social.js";
 
@@ -12,7 +14,7 @@ const fail = (message: string, status = 400): never => {
 };
 const adapter = async () => (await auth.$context).adapter;
 
-const KINDS = ["daily", "free", "challenge"], VARIANTS = ["classic", "hue", "jigsaw"], LEVELS = ["easy", "medium", "hard"];
+const KINDS = ["daily", "free", "challenge"], LEVELS = ["easy", "medium", "hard"];
 const iso = (v: unknown) => typeof v === "string" && !Number.isNaN(Date.parse(v));
 const day = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 const count = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v as number) < 100000;
@@ -24,12 +26,21 @@ export function validRecord(r: any): r is PlayRecord {
     typeof r.id === "string" && r.id.length > 0 && r.id.length <= 64 &&
     KINDS.includes(r.kind) && VARIANTS.includes(r.variant) && LEVELS.includes(r.difficulty) &&
     typeof r.seed === "string" && r.seed.length <= 120 &&
+    (r.variant !== "ring" || (r.kind !== "daily" && !!ringLayoutForSeed(r.seed))) &&
     (r.kind !== "daily" || (day(r.daily) && r.seed === `daily:${r.daily}:${r.difficulty}`)) &&
     typeof r.seconds === "number" && Number.isFinite(r.seconds) && r.seconds > 0 && r.seconds < 86400 * 7 &&
     (r.accuracy === null || (Number.isInteger(r.accuracy) && r.accuracy >= 0 && r.accuracy <= 100)) &&
     [r.hints, r.checks, r.reveals, r.autofills].every(count) &&
     typeof r.assisted === "boolean" && iso(r.startedAt) && iso(r.completedAt) &&
     day(r.localDate) && Number.isInteger(r.startHour) && r.startHour >= 0 && r.startHour <= 23
+  );
+}
+
+// Older clients still receive the same grid records. The export includes every layout.
+function supportedRecords(records: PlayRecord[], layoutVersions: unknown) {
+  const supported = new Set(Array.isArray(layoutVersions) ? layoutVersions : []);
+  return records.filter(record =>
+    record.variant !== "ring" || supported.has(ringLayoutForSeed(record.seed)?.version),
   );
 }
 
@@ -196,7 +207,7 @@ export function accountRouter() {
             data: JSON.stringify(r),
           },
         });
-      res.json({ added: fresh.length, rejected: incoming.length - valid.length, records: [...existing, ...fresh].sort(byTime) });
+      res.json({ added: fresh.length, rejected: incoming.length - valid.length, records: supportedRecords([...existing, ...fresh].sort(byTime), req.body.ringLayouts) });
     } catch (e) {
       next(e);
     }
@@ -204,7 +215,8 @@ export function accountRouter() {
 
   router.get("/me/records", async (req: Req, res, next) => {
     try {
-      res.json({ records: await loadRecords(req.userId!) });
+      const versions = typeof req.query.ringLayouts === "string" ? req.query.ringLayouts.split(",") : [];
+      res.json({ records: supportedRecords(await loadRecords(req.userId!), versions) });
     } catch (e) {
       next(e);
     }

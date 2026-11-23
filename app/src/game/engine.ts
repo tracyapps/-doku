@@ -1,34 +1,20 @@
-export type Variant = 'classic' | 'hue' | 'jigsaw';
+import { random, shuffle } from './random.js';
+import { generateRing, ringLayoutForSeed } from './ringdoku.js';
+
+export const GRID_VARIANTS = ['classic', 'hue', 'jigsaw'] as const;
+export type GridVariant = typeof GRID_VARIANTS[number];
+export const VARIANTS = [...GRID_VARIANTS, 'ring'] as const;
+export type Variant = typeof VARIANTS[number];
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type Puzzle = {
   id: string; seed: string; variant: Variant; difficulty: Difficulty;
   givens: number[]; solution: number[]; regions: number[]; rating: string;
 };
 
-const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+export const GRID_SYMBOLS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const BASE = [4,9,8,3,2,1,6,5,7,3,6,5,7,9,8,2,4,1,1,2,7,4,5,6,8,3,9,2,4,6,8,1,9,3,7,5,5,7,1,6,3,2,4,9,8,9,8,3,5,4,7,1,6,2,7,5,4,2,8,3,9,1,6,8,3,9,1,6,5,7,2,4,6,1,2,9,7,4,5,8,3];
 // A curated irregular partition: nine connected nine-cell regions, each with 1–9.
 const JIGSAW = [0,0,0,1,1,1,2,2,2,0,0,0,0,1,4,2,2,2,0,0,1,1,1,4,2,2,2,3,3,1,1,4,4,5,5,5,3,3,3,3,4,4,5,8,5,3,3,3,4,4,4,5,8,5,6,6,6,7,7,7,5,8,5,6,6,7,7,7,7,8,8,8,6,6,6,6,7,7,8,8,8];
-
-function random(seed: string) {
-  let state = 2166136261;
-  for (const c of seed) state = Math.imul(state ^ c.charCodeAt(0), 16777619);
-  return () => {
-    state += 0x6d2b79f5;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function shuffle<T>(items: T[], rng: () => number): T[] {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
 
 export function peers(regions: number[], index: number): number[] {
   return regions.flatMap((region, i) => i !== index &&
@@ -38,14 +24,14 @@ export function peers(regions: number[], index: number): number[] {
 export function candidates(values: number[], regions: number[], index: number): number[] {
   if (values[index]) return [];
   const used = new Set(peers(regions, index).map(i => values[i]));
-  return DIGITS.filter(n => !used.has(n));
+  return GRID_SYMBOLS.filter(n => !used.has(n));
 }
 
 function units(regions: number[]): number[][] {
   return [
-    ...DIGITS.map((_, row) => DIGITS.map((_, col) => row * 9 + col)),
-    ...DIGITS.map((_, col) => DIGITS.map((_, row) => row * 9 + col)),
-    ...DIGITS.map((_, region) => regions.flatMap((r, i) => r === region ? [i] : [])),
+    ...GRID_SYMBOLS.map((_, row) => GRID_SYMBOLS.map((_, col) => row * 9 + col)),
+    ...GRID_SYMBOLS.map((_, col) => GRID_SYMBOLS.map((_, row) => row * 9 + col)),
+    ...GRID_SYMBOLS.map((_, region) => regions.flatMap((r, i) => r === region ? [i] : [])),
   ];
 }
 
@@ -99,8 +85,18 @@ export function countSolutions(values: number[], regions: number[], limit = 2): 
 
 /** Levels currently describe clue density, not a calibrated human technique rating. */
 export function createPuzzle(seed: string, variant: Variant, difficulty: Difficulty): Puzzle {
+  if (variant === 'ring') {
+    const layout = ringLayoutForSeed(seed);
+    if (!layout) throw Error('This Ringdoku layout version is unavailable. Refresh to play.');
+    const { givens, solution, clues } = generateRing(layout, seed, { easy: 0.48, medium: 0.32, hard: 0.21 }[difficulty]);
+    return {
+      id: `${layout.version}:${difficulty}:${encodeURIComponent(seed)}`, seed, variant, difficulty,
+      givens, solution, regions: [],
+      rating: `${clues} clues · approximate ${difficulty} (clue density)`,
+    };
+  }
   const rng = random(seed);
-  const symbols = shuffle(DIGITS, rng);
+  const symbols = shuffle(GRID_SYMBOLS, rng);
   const turns = Math.floor(rng() * 4), reflect = rng() < 0.5;
   const sourceRegions = variant === 'jigsaw' ? JIGSAW : BASE.map((_, i) => Math.floor(i / 27) * 3 + Math.floor((i % 9) / 3));
   const solution = Array<number>(81), regions = Array<number>(81);

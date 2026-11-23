@@ -23,7 +23,9 @@ const cleanRoutes: Plugin = {
           url.pathname === "/"
             ? "/"
             : `/${url.pathname.split("/").filter(Boolean).join("/")}/`;
-        if (publicPaths.has(path) || /^\/u\/[^/]+\/$/.test(path))
+        if (path === "/testing/" || path === "/testing/results/")
+          request.url = "/testing.html" + url.search;
+        else if (publicPaths.has(path) || /^\/u\/[^/]+\/$/.test(path))
           request.url = `/web.html${url.search}`;
       }
       next();
@@ -35,7 +37,10 @@ export default defineConfig({
   plugins: [cleanRoutes, react()],
   server: {
     host: "127.0.0.1",
-    proxy: { "/api": "http://127.0.0.1:3001" },
+    proxy: { "/api": { target: "http://127.0.0.1:3001", changeOrigin: false } },
   },
-  build: { outDir: "dist/web", rollupOptions: { input: "web.html" } },
+  build: {
+    outDir: "dist/web",
+    rollupOptions: { input: ["web.html", "testing.html"] },
+  },
 });

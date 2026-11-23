@@ -36,6 +36,7 @@ import {
   Trophy,
   Link as LinkIcon,
   Lightbulb,
+  CirclesThree,
   Eye,
   EyeSlash,
   CheckCircle,
@@ -58,13 +59,16 @@ import {
 } from "@phosphor-icons/react";
 import { BottomSheet, MobileScroll, KeyboardInput } from "./mobile";
 import {
-  candidates,
-  completedUnits,
-  conflicts,
   createPuzzle,
   type Variant,
   type Difficulty,
+  type Puzzle,
 } from "./game/engine";
+import { puzzleCandidates, puzzleCompletedGroups, puzzleConflicts, puzzleRing, puzzleSymbols } from "./game/puzzle-rules";
+import { ringCellLabel, ringToSeed } from "./game/ringdoku";
+import { RingBoard, RingExample, RingLegend } from "./ringdoku/RingBoard";
+import { adjacentRingCell } from "./ringdoku/geometry";
+import { RingFeedback } from "./ringdoku/RingFeedback";
 import { selectCell, toggleValue } from "./game/selection";
 import { newId } from "./game/id";
 import {
@@ -98,6 +102,7 @@ import {
 } from "./game/account";
 import {
   ACHIEVEMENTS,
+  achievementContext,
   byId,
   evaluate,
   unseen,
@@ -108,11 +113,13 @@ import {
 } from "./game/achievements";
 import {
   autofill,
+  checkSession,
   enter,
   eraseCell,
   formatTime,
   newSession,
   readSaved,
+  resetSession,
   restore,
   reveal,
   save,
@@ -186,6 +193,7 @@ type Settings = {
   input: "cell" | "value";
   timer: boolean;
   matches: boolean;
+  ringOutlines: boolean;
   conflicts: boolean;
   autocheck: boolean;
   removeNotes: boolean;
@@ -201,6 +209,7 @@ const defaults: Settings = {
   input: "cell",
   timer: true,
   matches: true,
+  ringOutlines: false,
   conflicts: false,
   autocheck: false,
   removeNotes: true,
@@ -229,6 +238,7 @@ const labels: Record<Variant, string> = {
   classic: "sudoku",
   hue: "huedoku",
   jigsaw: "jigsadoku",
+  ring: "ringdoku",
 };
 const types: [Variant, string, string, typeof Hash][] = [
   [
@@ -248,6 +258,12 @@ const types: [Variant, string, string, typeof Hash][] = [
     "jigsadoku",
     "Same logic, wonderfully irregular regions.",
     PuzzlePiece,
+  ],
+  [
+    "ring",
+    "Ringdoku",
+    "Linked thirds · 1–4",
+    CirclesThree,
   ],
 ];
 const symbols = [
@@ -813,6 +829,18 @@ function SGJigsawBoard() {
     </div>
   );
 }
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() => matchMedia(query).matches);
+  useEffect(() => {
+    const media = matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, [query]);
+  return matches;
+}
+
 export default function Prototype() {
   return (
     <MobileScroll className="doku-preview">
@@ -917,14 +945,18 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           : "home";
   });
   const [howReturn, setHowReturn] = useState<Screen>("home");
+  const [ringHelp, setRingHelp] = useState(false);
   const [viewedPlayer, setViewedPlayer] = useState<string>(
     () => playerKeyFromPath(normalizePublicPath(location.pathname)) || "",
   );
   const [sgTheme, setSgTheme] = useState<Theme>(settings.theme);
-  const [sheet, setSheet] = useState<"settings" | "more" | null>(null),
-    [confirm, setConfirm] = useState<"restart" | "new" | "reveal" | null>(null);
+  const [sheet, setSheet] = useState<"settings" | "more" | "ring-feedback" | null>(null),
+    [confirm, setConfirm] = useState<"reset" | "level" | "new" | "reveal" | null>(null);
   const [variant, setVariant] = useState<Variant>("classic"),
     [difficulty, setDifficulty] = useState<Difficulty>("easy");
+  const [levelSeed, setLevelSeed] = useState<string | null>(null);
+  const [timerReset, setTimerReset] = useState(0);
+  const [ringOutlineCell, setRingOutlineCell] = useState<number | null>(null);
   const [selected, setSelected] = useState<number | null>(null),
     [active, setActive] = useState<number | null>(null),
     [eraseActive, setEraseActive] = useState(false),
@@ -932,7 +964,6 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     [hideNotes, setHideNotes] = useState(false),
     [timerShown, setTimerShown] = useState(settings.timer);
   const [toast, setToast] = useState(""),
-    [checked, setChecked] = useState<number[]>([]),
     [celebrate, setCelebrate] = useState<number[]>([]),
     [celebrateValue, setCelebrateValue] = useState<number | null>(null),
     [busy, setBusy] = useState(false),
@@ -952,19 +983,20 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
 
   const celebrationSeen = useRef(new Set<string>());
   const valueCelebrationSeen = useRef(new Set<number>());
-  /** A value is "done" once all nine copies are placed with no conflicts among them. */
-  const completedValues = (values: number[], regions: number[]) => {
-    const bad = new Set(conflicts(values, regions));
-    const counts = Array(10).fill(0) as number[];
-    values.forEach((v) => {
-      if (v) counts[v]++;
-    });
-    return Array.from({ length: 9 }, (_, i) => i + 1).filter(
-      (v) =>
-        counts[v] === 9 &&
-        values.every((val, i) => val !== v || !bad.has(i)),
+  const completedValues = (puzzle: Puzzle, values: number[]) => {
+    const badValues = new Set(puzzleConflicts(puzzle, values).map(i => values[i]));
+    return puzzleSymbols(puzzle).filter(value =>
+      !badValues.has(value) &&
+      values.filter(v => v === value).length === puzzle.solution.filter(v => v === value).length,
     );
   };
+  const ring = session && puzzleRing(session.puzzle);
+  const playSymbols = session ? puzzleSymbols(session.puzzle) : [];
+  const completed = useMemo(
+    () => new Set(session ? completedValues(session.puzzle, session.values) : []),
+    [session?.values, session?.puzzle],
+  );
+  const discordCompact = useMediaQuery("(max-width: 700px), (pointer: coarse)") && inDiscord;
   const notify = (message: string) => setToast(message);
   const selectedGiven = selected !== null && !!session?.puzzle.givens[selected];
   const clearSelection = () => {
@@ -1157,7 +1189,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
         );
     }, 1000);
     return () => clearInterval(tick);
-  }, [screen, session?.id, session?.completedAt]);
+  }, [screen, session?.id, session?.completedAt, timerReset]);
   useEffect(() => {
     if (!session || session.completedAt || !solved(session)) return;
     const finished = {
@@ -1199,19 +1231,22 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     setEraseActive(false);
     setNotes(false);
     setHideNotes(false);
-    setChecked([]);
+    setRingOutlineCell(null);
+    setLevelSeed(null);
+    setCelebrate([]);
+    setCelebrateValue(null);
     setTimerShown(settings.timer);
     setScreen("game");
     setSheet(null);
     setConfirm(null);
     setShareUrl("");
     celebrationSeen.current = new Set(
-      completedUnits(next.values, next.puzzle.regions).map((u) =>
+      puzzleCompletedGroups(next.puzzle, next.values).map((u) =>
         u.join(","),
       ),
     );
     valueCelebrationSeen.current = new Set(
-      completedValues(next.values, next.puzzle.regions),
+      completedValues(next.puzzle, next.values),
     );
   };
   /** Set an unfinished game aside (a daily by its seed, anything else as "free"). */
@@ -1257,7 +1292,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
   };
   /** "Let's play": starting a new free game replaces only a free game. */
   const startFree = () => {
-    if (freeInProgress && !challengeId) return setConfirm("new");
+    if (freeInProgress && !challengeId && !levelSeed) return setConfirm("new");
     if (isDaily(session)) park(session);
     void start();
   };
@@ -1267,19 +1302,21 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     setBusy(true);
     try {
       await new Promise((r) => setTimeout(r, 20));
-      const family = opts.seed || challengeData?.seed || newId();
+      const nextVariant = opts.variant ?? variant;
+      const family = opts.seed || (challengeId ? challengeData?.seed : levelSeed) ||
+        (nextVariant === "ring" ? ringToSeed(newId()) : newId());
       const puzzle = createPuzzle(
         family,
-        opts.variant ?? variant,
+        nextVariant,
         opts.difficulty ?? difficulty,
       );
-      let next = newSession(puzzle);
+      const next = newSession(puzzle);
       if (challengeId) {
-        if (!challengeData)
+        if (challengeData?.id !== challengeId)
           throw new Error("Load the challenge before starting.");
         const attempt = await startChallengeAttempt(
           challengeId,
-          difficulty,
+          puzzle.difficulty,
           playerName || undefined,
         );
         next.challenge = {
@@ -1288,6 +1325,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           token: attempt.token,
         };
         if (
+          attempt.puzzle.id !== puzzle.id ||
           JSON.stringify(attempt.puzzle.givens) !==
           JSON.stringify(puzzle.givens)
         )
@@ -1297,6 +1335,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
         next.events.push({ kind: "autocheck", enabled: true });
       if (settings.conflicts)
         next.events.push({ kind: "conflicts", enabled: true });
+      if (!parseDailySeed(puzzle.seed)) unpark("free");
       openSession(next);
     } catch (e) {
       notify(e instanceof Error ? e.message : "Could not start the puzzle.");
@@ -1309,20 +1348,19 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     const next = enter(session, index, value, notes, settings.removeNotes);
     if (next === session) return;
     setSession(next);
-    setChecked([]);
     if (settings.celebrations) {
       const before = new Set(
-        completedUnits(session.values, session.puzzle.regions).map((u) =>
+        puzzleCompletedGroups(session.puzzle, session.values).map((u) =>
           u.join(","),
         ),
       );
-      const fresh = completedUnits(next.values, next.puzzle.regions).filter(
+      const fresh = puzzleCompletedGroups(next.puzzle, next.values).filter(
         (u) =>
           !before.has(u.join(",")) && !celebrationSeen.current.has(u.join(",")),
       );
       for (const u of fresh) celebrationSeen.current.add(u.join(","));
       if (fresh.length) setCelebrate([...new Set(fresh.flat())]);
-      const newlyDone = completedValues(next.values, next.puzzle.regions).filter(
+      const newlyDone = completedValues(next.puzzle, next.values).filter(
         (v) => !valueCelebrationSeen.current.has(v),
       );
       for (const v of newlyDone) valueCelebrationSeen.current.add(v);
@@ -1333,6 +1371,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     if (!session) return;
     const given = !!session.puzzle.givens[i];
     setSelected(i);
+    if (ring) setRingOutlineCell(i);
     if (given) {
       setEraseActive(false);
       setActive(session.values[i] || null);
@@ -1340,7 +1379,6 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     }
     if (settings.input === "value" && eraseActive) {
       setSession((s) => (s ? eraseCell(s, i, notes) : s));
-      setChecked([]);
       return;
     }
     setEraseActive(false);
@@ -1349,6 +1387,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     if (choice.place && choice.active) move(i, choice.active);
   };
   const keyClick = (v: number) => {
+    if (!playSymbols.includes(v)) return;
     if (active === v && !eraseActive) {
       clearSelection();
       return;
@@ -1364,7 +1403,6 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       setEraseActive((v) => !v);
       setActive(null);
       setSelected(null);
-      setChecked([]);
       return;
     }
     if (selected === null)
@@ -1374,54 +1412,43 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     if (selectedGiven)
       return notify("That square is part of the puzzle and cannot be changed.");
     setSession((s) => (s ? eraseCell(s, selected, notes) : s));
-    setChecked([]);
+  };
+  const focusCell = (cell: number) => {
+    setSelected(cell);
+    if (ring) setRingOutlineCell(cell);
+    if (settings.input === "cell") setActive(session?.values[cell] || null);
   };
   useEffect(() => {
-    if (screen !== "game" || sheet || confirm) return;
+    if (screen !== "game" || !session || sheet || confirm) return;
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).closest("select,input,textarea")) return;
-      if (e.key >= "1" && e.key <= "9") {
+      if (e.defaultPrevented || (e.target as Element)?.closest?.("select,input,textarea,[contenteditable]")) return;
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && playSymbols.includes(Number(e.key))) {
         e.preventDefault();
         keyClick(Number(e.key));
       } else if (e.key === "Backspace" || e.key === "Delete") {
         e.preventDefault();
         erase();
-      } else if (e.key.toLowerCase() === "n") setNotes((n) => !n);
-      else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+      } else if (e.key.toLowerCase() === "n" && !e.ctrlKey && !e.metaKey) setNotes((n) => !n);
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         setSession((s) => (s ? restore(s, e.shiftKey) : s));
-      } else if (
-        ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)
-      ) {
+      } else if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault();
-        const step = {
-          ArrowLeft: -1,
-          ArrowRight: 1,
-          ArrowUp: -9,
-          ArrowDown: 9,
-        }[e.key]!;
-        const next = Math.max(0, Math.min(80, (selected ?? 0) + step));
-        setSelected(next);
-        if (settings.input === "cell") setActive(session?.values[next] || null);
+        const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -9, ArrowDown: 9 }[e.key]!;
+        const next = ring
+          ? adjacentRingCell(ring, selected ?? 0, e.key)
+          : Math.max(0, Math.min(session.values.length - 1, (selected ?? 0) + step));
+        focusCell(next);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
-  const checkAnswers = (cellOnly = false) => {
+  const checkAnswers = (cell?: number) => {
     if (!session) return;
-    const errors = session.values.flatMap((v, i) =>
-      v &&
-      !session.puzzle.givens[i] &&
-      v !== session.puzzle.solution[i] &&
-      (!cellOnly || i === selected)
-        ? [i]
-        : [],
-    );
-    setChecked(errors);
-    setSession((s) =>
-      s ? { ...s, events: [...s.events, { kind: "check" }] } : s,
-    );
+    const checked = checkSession(session, cell);
+    setSession(checked.session);
+    const { errors } = checked;
     notify(
       errors.length
         ? `${errors.length} ${errors.length === 1 ? "entry needs" : "entries need"} another look.`
@@ -1433,7 +1460,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     if (!session) return;
     const empty = session.values.flatMap((v, i) => (v ? [] : [i]));
     const forced = empty.find(
-      (i) => candidates(session.values, session.puzzle.regions, i).length === 1,
+      (i) => puzzleCandidates(session.puzzle, session.values, i).length === 1,
     );
     setSession((s) =>
       s
@@ -1447,14 +1474,18 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
         : s,
     );
     if (forced !== undefined) {
-      setSelected(forced);
+      focusCell(forced);
       notify(
-        `Look at row ${Math.floor(forced / 9) + 1}, column ${(forced % 9) + 1}. Only one candidate fits its row, column and region.`,
+        ring
+          ? `Look at ${ringCellLabel(ring, forced).toLowerCase()}. Only one candidate fits all its groups.`
+          : `Look at row ${Math.floor(forced / 9) + 1}, column ${(forced % 9) + 1}. Only one candidate fits its row, column and region.`,
       );
     } else if (empty.length) {
-      setSelected(empty[0]);
+      focusCell(empty[0]);
       notify(
-        "Try comparing the missing values in this square’s row, column and region. Notes can help you narrow them down.",
+        ring
+          ? "Try comparing the missing values across the groups that share this cell."
+          : "Try comparing the missing values in this square’s row, column and region. Notes can help you narrow them down.",
       );
     }
     setSheet(null);
@@ -1612,10 +1643,12 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     );
   };
   const conflictSet = useMemo(
-    () =>
-      new Set(session ? conflicts(session.values, session.puzzle.regions) : []),
-    [session?.values, session?.puzzle.regions],
+    () => new Set(session ? puzzleConflicts(session.puzzle, session.values) : []),
+    [session?.values, session?.puzzle],
   );
+  const isEntryError = (s: Session, cell: number) =>
+    !!s.checked?.includes(cell) || (settings.conflicts && conflictSet.has(cell)) ||
+    (settings.autocheck && !!s.values[cell] && s.values[cell] !== s.puzzle.solution[cell]);
   const activeSession = screen === "results" ? result : session;
   const themeStyle = {
     "--value-scale": settings.size,
@@ -1647,6 +1680,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
     setSheet(null);
     setScreen(next);
     setShareUrl("");
+    if (next === "home") setLevelSeed(null);
     if (marketingSite) {
       const url = new URL(location.href);
       const path =
@@ -1710,8 +1744,9 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
         ?.scrollIntoView({ behavior: "smooth", block: "start" }),
     );
   };
-  const openHow = (from: Screen) => {
+  const openHow = (from: Screen, showRing = false) => {
     setHowReturn(from);
+    setRingHelp(showRing);
     go("how");
   };
   useEffect(() => {
@@ -1719,7 +1754,9 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       const scroller = document.querySelector(".doku-preview .mobile-scroll");
       if (scroller) scroller.scrollTop = 0;
     } else window.scrollTo(0, 0);
-  }, [screen, preview]);
+    if (screen === "how" && ringHelp)
+      document.getElementById("ringdoku-help")?.scrollIntoView();
+  }, [screen, preview, ringHelp]);
   const Back = ({ to = "home" }: { to?: Screen }) => (
     <button className="back-link" onClick={() => go(to)}>
       <CaretLeft size={18} /> {to === "game" ? "Back to puzzle" : "Back"}
@@ -1853,17 +1890,30 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       </>
     );
   };
+  const gameActions = (
+    <div className="game-header-actions">
+      <button className="icon-button" aria-label="Settings"
+        onClick={() => setSheet("settings")}>
+        <Gear size={22} weight="bold" />
+      </button>
+      <button data-preserve-selection className="icon-button" aria-label="More options"
+        onClick={() => setSheet("more")}>
+        <DotsThree size={26} weight="bold" />
+      </button>
+    </div>
+  );
   return (
     <div
       className={`doku ${preview ? "in-preview" : ""}`}
       data-theme={screen === "styleguide" ? undefined : settings.theme}
       data-font={settings.font}
+      data-discord={discordCompact ? "compact" : inDiscord ? "desktop" : undefined}
       style={themeStyle}
       onPointerDown={(e) => {
-        const target = e.target as HTMLElement;
-        if (target.closest(".board,.keypad")) return;
+        const target = e.target as Element;
+        if (target.closest(".board,.ring-board,.keypad,.dialog-content,.doku-sheet,[data-preserve-board]")) return;
         if (!target.closest("[data-preserve-active-value]")) setActive(null);
-        if (!target.closest(".editing-controls")) {
+        if (!target.closest(".editing-controls,[data-preserve-selection]")) {
           setSelected(null);
           setEraseActive(false);
         }
@@ -2404,7 +2454,10 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                 disabled={!!challengeId}
                 aria-pressed={variant === v}
                 className={`type-option ${variant === v ? "chosen" : ""}`}
-                onClick={() => setVariant(v)}
+                onClick={() => {
+                  if (v !== variant) setLevelSeed(null);
+                  setVariant(v);
+                }}
               >
                 <Icon size={30} />
                 <span>
@@ -2436,6 +2489,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             </label>
           )}
           <h2 className="section-label">Your level</h2>
+          {variant === "ring" && <p className="quiet">Levels vary by the number of givens.</p>}
           <div className="level-options">
             {(["easy", "medium", "hard"] as const).map((d) => (
               <button
@@ -2461,7 +2515,13 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           </p>
         </main>
       )}
-      {screen === "game" && session && (
+      {screen === "game" && session?.puzzle.variant === "ring" && !ring && (
+        <main className="page">
+          <Back />
+          <p role="status">This saved Ringdoku layout needs a compatible version of *doku.</p>
+        </main>
+      )}
+      {screen === "game" && session && (session.puzzle.variant !== "ring" || ring) && (
         <main className="game-page" data-variant={session.puzzle.variant}>
           <header className="game-header">
             <h1 className="game-title">
@@ -2494,26 +2554,27 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                 {session.puzzle.difficulty}
               </small>
             </div>
-            <div className="game-header-actions">
-              <button
-                className="icon-button"
-                aria-label="Settings"
-                onClick={() => setSheet("settings")}
-              >
-                <Gear size={22} weight="bold" />
-              </button>
-              <button
-                className="icon-button"
-                aria-label="More options"
-                onClick={() => setSheet("more")}
-              >
-                <DotsThree size={26} weight="bold" />
-              </button>
-            </div>
+            {!discordCompact && gameActions}
           </header>
           <div className="play-layout">
             <div className="board-wrap">
-              <div
+              {ring ? (
+                <RingBoard layout={ring}
+                  cells={session.values.map((value, i) => ({
+                    value,
+                    notes: hideNotes ? undefined : session.notes[i],
+                    given: !!session.puzzle.givens[i],
+                    error: isEntryError(session, i),
+                    celebrating: celebrate.includes(i) || (!!value && value === celebrateValue),
+                  }))}
+                  selected={selected}
+                  outlineCell={ringOutlineCell ?? 0}
+                  active={settings.matches ? active : null}
+                  outlines={settings.ringOutlines}
+                  onCell={cellClick}
+                  onArrow={focusCell}
+                />
+              ) : <div
                 className="board"
                 data-variant={session.puzzle.variant}
                 role="group"
@@ -2524,13 +2585,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                     c = i % 9,
                     reg = session.puzzle.regions[i],
                     given = !!session.puzzle.givens[i];
-                  const isConflict = settings.conflicts && conflictSet.has(i);
-                  const error =
-                    checked.includes(i) ||
-                    isConflict ||
-                    (settings.autocheck &&
-                      value !== 0 &&
-                      value !== session.puzzle.solution[i]);
+                  const error = isEntryError(session, i);
                   const matching =
                     settings.matches && active !== null && value === active;
                   const borders = {
@@ -2637,7 +2692,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                     </button>
                   );
                 })}
-              </div>
+              </div>}
               {session.completedAt && (
                 <div className="solved-banner">
                   <CheckCircle size={21} /> Beautifully solved.
@@ -2645,15 +2700,36 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               )}
             </div>
             <div className="game-controls">
+              {ring && (
+                <>
+                  <div className="ring-tools" aria-label="Ringdoku tools">
+                    <button data-preserve-board aria-pressed={settings.ringOutlines}
+                      aria-label="Show rule outlines" onClick={() => setPreference("ringOutlines", !settings.ringOutlines)}>
+                      <CirclesThree aria-hidden="true" /> Outlines
+                    </button>
+                    <button data-preserve-selection onClick={() => openHow("game", true)}>
+                      <Question aria-hidden="true" /> Rules
+                    </button>
+                    <button data-preserve-selection onClick={() => setSheet("ring-feedback")}>
+                      <ChatCircleDots aria-hidden="true" /> Feedback
+                    </button>
+                  </div>
+                  {settings.ringOutlines && (
+                    <>
+                      <RingLegend groups={ring.memberships[ringOutlineCell ?? 0]} />
+                      <span className="sr-only" role="status">
+                        {ring.memberships[ringOutlineCell ?? 0].map(group => group.label).join(", ")}
+                      </span>
+                    </>
+                  )}
+                </>
+              )}
               <div className="editing-controls">
                 <button
                   data-preserve-active-value
                   className="labeled-icon"
                   disabled={!session.past.length || !!session.completedAt}
-                  onClick={() => {
-                    setSession((s) => (s ? restore(s) : s));
-                    setChecked([]);
-                  }}
+                  onClick={() => setSession((s) => (s ? restore(s) : s))}
                 >
                   <span>
                     <ArrowCounterClockwise size={29} />
@@ -2694,24 +2770,12 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               </div>
               <div
                 className={`keypad ${selectedGiven ? "locked" : ""}`}
+                style={ring ? { "--ring-key-count": playSymbols.length } as CSSProperties : undefined}
                 role="group"
                 aria-label="Value keypad"
               >
-                {Array.from({ length: 9 }, (_, i) => {
-                  const v = i + 1;
-                  const done =
-                    Array.from(
-                      { length: 9 },
-                      (_, region) =>
-                        session.values.filter(
-                          (value, index) =>
-                            session.puzzle.regions[index] === region &&
-                            value === v,
-                        ).length === 1,
-                    ).every(Boolean) &&
-                    ![...conflictSet].some(
-                      (index) => session.values[index] === v,
-                    );
+                {playSymbols.map((v, i) => {
+                  const done = completed.has(v);
                   return (
                     <button
                       key={v}
@@ -2742,7 +2806,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               <p className="game-status" role="status">
                 {selectedGiven ? (
                   <>
-                    <Lock size={14} weight="fill" /> This is a given square.
+                    <Lock size={14} weight="fill" /> This is a given {ring ? "cell" : "square"}.
                   </>
                 ) : eraseActive ? (
                   `Erase is on. Tap a square to clear its ${notes ? "notes" : "number"}.`
@@ -2756,6 +2820,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                   Notes hidden · Show notes
                 </button>
               )}
+              {discordCompact && <div className="discord-game-dock">{gameActions}</div>}
               {session.completedAt && (
                 <button
                   className="primary wide"
@@ -3118,7 +3183,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                     key={def.id}
                     def={def}
                     awards={awards.filter((a) => a.id === def.id)}
-                    progress={def.progress?.({ records, today })}
+                    progress={def.progress?.(achievementContext({ records, today }))}
                   />
                 ))}
             </ul>
@@ -3423,6 +3488,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             huedoku, they’re colors and shapes. Jigsadoku changes the shape of
             the regions.
           </p>
+          <RingExample />
           <h2>Two ways to put things in place.</h2>
           <p>
             <strong>Cell first:</strong> select a square, then a keypad value.{" "}
@@ -3459,7 +3525,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           </p>
           <h2>Keyboard shortcuts</h2>
           <p>
-            Use 1–9 for values, arrow keys to select a square, N for notes,
+            Use the number keys for values, arrow keys to select a cell, N for notes,
             Delete to erase, and Command/Ctrl + Z to undo. Add Shift to redo.
           </p>
           <h2>Playing in Discord</h2>
@@ -3547,7 +3613,10 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           </p>
           <h2>Public feedback</h2>
           <p>
-            Suggest an idea and Report a bug open GitHub Issue Forms. Anything
+            Written Ringdoku feedback is optional and appears on the public
+            testing results page with your consent. The form sends your
+            comment and uses a rate limit to prevent spam. Suggest an idea and
+            Report a bug open GitHub Issue Forms. Anything
             submitted there is public and handled under GitHub’s account and
             privacy terms. Playing *doku never requires a GitHub account.
           </p>
@@ -4039,10 +4108,30 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
       <Modal
         preview={preview}
         open={sheet === "more"}
-        title="A little help, if you need it"
+        title="Puzzle options"
         onClose={() => setSheet(null)}
       >
         <div className="menu-list">
+          <h3 className="menu-section">This puzzle</h3>
+          <button
+            disabled={!session || !!session.completedAt}
+            onClick={() => {
+              setSheet(null);
+              setConfirm("reset");
+            }}
+          >
+            <ArrowCounterClockwise /> Clear board / start over
+          </button>
+          {!isDaily(session) && (
+            <button
+              onClick={() => {
+                setSheet(null);
+                setConfirm("level");
+              }}
+            >
+              <Hash /> Change level / start a new puzzle
+            </button>
+          )}
           <h3 className="menu-section">Playing aids</h3>
           <button
             onClick={() => {
@@ -4078,9 +4167,9 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           </button>
           <button
             disabled={selected === null || !!session?.completedAt}
-            onClick={() => checkAnswers(true)}
+            onClick={() => selected !== null && checkAnswers(selected)}
           >
-            <CheckCircle /> Check this square
+            <CheckCircle /> Check this {ring ? "cell" : "square"}
           </button>
           <button
             disabled={!!session?.completedAt}
@@ -4095,7 +4184,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               setConfirm("reveal");
             }}
           >
-            <Eye /> Reveal this square
+            <Eye /> Reveal this {ring ? "cell" : "square"}
           </button>
           <h3 className="menu-section">Around *doku</h3>
           <button onClick={friends}>
@@ -4110,7 +4199,7 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           <button onClick={() => go("profile")}>
             <Medal /> Profile & badges
           </button>
-          <button onClick={() => openHow("game")}>
+          <button onClick={() => openHow("game", !!ring)}>
             <Lightbulb /> How to play
           </button>
           <button onClick={() => go("roadmap")}>
@@ -4123,15 +4212,6 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
           <button onClick={() => feedback("bug")}>
             <Bug /> Report a bug
           </button>
-          <h3 className="menu-section">This puzzle</h3>
-          <button
-            onClick={() => {
-              setSheet(null);
-              setConfirm("restart");
-            }}
-          >
-            <ArrowCounterClockwise /> Change level / restart
-          </button>
           <button onClick={() => go("home")}>
             <House /> Home · progress saved
           </button>
@@ -4142,10 +4222,12 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
         open={confirm !== null}
         title={
           confirm === "reveal"
-            ? "Reveal this square?"
+            ? `Reveal this ${ring ? "cell" : "square"}?`
             : confirm === "new"
               ? "Start a new puzzle?"
-              : "Change level or restart?"
+              : confirm === "reset"
+                ? "Clear this board?"
+                : "Change level?"
         }
         onClose={() => setConfirm(null)}
       >
@@ -4154,7 +4236,9 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
             ? "This will enter the answer and record a reveal on your result."
             : confirm === "new"
               ? "This replaces your unfinished puzzle. Completed puzzles stay in History."
-              : "Your current entries and notes will be reset when you start again. The same puzzle family will be used."}
+              : confirm === "reset"
+                ? "Clear your entries and notes and restart the timer on this exact puzzle, at the same level. Earlier assistance and first-entry accuracy stay on this attempt’s result. This cannot be undone."
+                : "Choose a different level in the same puzzle family. Your current entries and notes will be replaced when you start. Completed puzzles stay in History."}
         </p>
         <div className="dialog-actions">
           <button className="secondary" onClick={() => setConfirm(null)}>
@@ -4168,22 +4252,25 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
                   setSession((s) => (s ? reveal(s, selected) : s));
                 setConfirm(null);
               } else if (confirm === "new") {
-                unpark("free");
                 if (isDaily(session)) park(session);
                 void start();
-              }
-              else {
+              } else if (confirm === "reset") {
+                if (session && !session.completedAt) {
+                  openSession(resetSession(session));
+                  setTimerReset(n => n + 1);
+                  notify("Puzzle reset. Same puzzle, same level.");
+                } else setConfirm(null);
+              } else if (!isDaily(session)) {
                 if (session) {
                   setVariant(session.puzzle.variant);
-                  setChallengeData({
-                    id: session.challenge?.id || "",
-                    seed: session.puzzle.seed,
-                    variant: session.puzzle.variant,
-                    results: [],
-                  } as any);
+                  setDifficulty(session.puzzle.difficulty);
+                  setLevelSeed(session.puzzle.seed);
+                  const id = session.challenge?.id ?? null;
+                  setChallengeId(id);
+                  if (challengeData?.id !== id) setChallengeData(null);
                 }
                 setConfirm(null);
-                setScreen("setup");
+                go("setup");
               }
             }}
           >
@@ -4191,9 +4278,14 @@ export function DokuApp({ preview = false }: { preview?: boolean }) {
               ? "Reveal answer"
               : confirm === "new"
                 ? "Start new puzzle"
-                : "Choose level"}
+                : confirm === "reset"
+                  ? "Clear board"
+                  : "Choose level"}
           </button>
         </div>
+      </Modal>
+      <Modal preview={preview} open={sheet === "ring-feedback"} title="Ringdoku feedback" onClose={() => setSheet(null)}>
+        {sheet === "ring-feedback" && <RingFeedback preview={preview} />}
       </Modal>
       <div
         className={`toast ${toast ? "visible" : ""}`}

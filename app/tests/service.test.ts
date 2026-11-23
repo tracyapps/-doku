@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { makeApp } from "../server/app.js";
 import { createStore } from "../server/store.js";
 import { createPuzzle } from "../src/game/engine.js";
+import { enter, autofill, newSession, resetSession, stats } from "../src/game/session.js";
 test("roadmap has a safe unconfigured response before GitHub is connected", async () => {
   const previous = process.env.GITHUB_REPO,
     previousPublic = process.env.VITE_GITHUB_REPO;
@@ -158,6 +159,20 @@ test("challenge credentials, completion replay, accuracy, persistence and idempo
       "Revealed cells excluded before and after reveal",
     );
     assert.equal(thirdResult.data.reveals, 1);
+    const { data: resetAttempt } = await call(`/challenges/${challenge.id}/attempts`, {
+      difficulty: "easy",
+    });
+    let reset = autofill(enter(newSession(puzzle), first, puzzle.solution[first] % 9 + 1));
+    reset = resetSession(reset);
+    assert.equal((await call(path, {attemptId:resetAttempt.attemptId,token:resetAttempt.token,elapsedSeconds:1,actions:reset.events})).status,400);
+    for(let cell=0;cell<81;cell++)if(!puzzle.givens[cell])reset=enter(reset,cell,puzzle.solution[cell]);
+    const resetResult = await call(path, {
+      attemptId:resetAttempt.attemptId,token:resetAttempt.token,elapsedSeconds:100,actions:reset.events,
+    });
+    assert.equal(resetResult.status,200);
+    assert.equal(resetResult.data.accuracy,stats(reset).accuracy);
+    assert.equal(resetResult.data.assisted,true);
+    assert.equal(resetResult.data.autofills,1);
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await rm(dir, { recursive: true, force: true });

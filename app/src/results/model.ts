@@ -4,7 +4,7 @@
 import type { Difficulty, Variant } from "../game/engine.js";
 import type { ChallengeResult } from "../game/network.js";
 import { stats, formatTime, type Session } from "../game/session.js";
-import { PAR_SECONDS } from "../game/scoring.js";
+import { puzzlePar } from "../game/scoring.js";
 
 export type ResultView = "run" | "radar" | "tracks" | "tape" | "grid";
 export const RESULT_VIEWS: { id: ResultView; label: string; description: string }[] = [
@@ -19,7 +19,7 @@ export const DEFAULT_RESULT_VIEWS: Record<ResultView, boolean> = {
 };
 
 export const LEVELS: Difficulty[] = ["easy", "medium", "hard"];
-export const variantName: Record<Variant, string> = { classic: "sudoku", hue: "huedoku", jigsaw: "jigsadoku" };
+export const variantName: Record<Variant, string> = { classic: "sudoku", hue: "huedoku", jigsaw: "jigsadoku", ring: "Ringdoku" };
 
 /** One player's result, from your own session or a friend's challenge entry. */
 export type Player = {
@@ -171,12 +171,12 @@ export function tracksFor(group: Player[]): { tracks: Track[]; timeWithheld: boo
   const worst = (f: (p: Player) => number) => Math.max(...group.map(f));
   const tracks: Track[] = [];
   if (level) {
-    const par = PAR_SECONDS[group[0].variant][group[0].difficulty];
-    const max = Math.ceil(Math.max(par * 1.5, worst((p) => p.seconds) * 1.1) / 60) * 60;
+    const par = puzzlePar(group[0].variant, group[0].difficulty);
+    const max = Math.ceil(Math.max((par ?? 0) * 1.5, worst((p) => p.seconds) * 1.1) / 60) * 60 || 60;
     tracks.push({
       key: "time", label: "Active time", value: (p) => p.seconds, display: (p) => fmtTime(p.seconds),
       min: 0, max, lowIsBest: true, lowWord: "faster", highWord: "slower", bestWord: "fastest",
-      endLabel: (v) => fmtTime(v), mark: { value: par, label: `par ${fmtTime(par)}` },
+      endLabel: (v) => fmtTime(v), mark: par ? { value: par, label: `par ${fmtTime(par)}` } : undefined,
     });
   }
   tracks.push({
@@ -212,8 +212,10 @@ export const bar = (n: number, total = 10) => {
   return "█".repeat(k) + "░".repeat(total - k);
 };
 /** Segments for the time bar: full at or under par, fewer the slower you go. */
-export const timeSegments = (p: Player) =>
-  clamp(Math.round(10 * Math.min(1, PAR_SECONDS[p.variant][p.difficulty] / Math.max(p.seconds, 1))), 1, 10);
+export function timeSegments(p: Player) {
+  const par = puzzlePar(p.variant, p.difficulty);
+  return par ? clamp(Math.round(10 * Math.min(1, par / Math.max(p.seconds, 1))), 1, 10) : null;
+}
 export function shareText(p: Player): string {
   const acc = p.accuracy == null ? "—" : `${p.accuracy}%`;
   return (

@@ -7,7 +7,7 @@
 // Only daily puzzles count toward leaderboards: everyone plays the same
 // three puzzles a day, so nobody can farm points with endless easy games,
 // and showing up more days naturally earns more (capped at 3 a day).
-import type { Difficulty, Variant } from './engine.js';
+import type { Difficulty, GridVariant, Variant } from './engine.js';
 import { consistency, type Period, periodStart, periodEnd } from './consistency.js';
 import type { PlayRecord } from './records.js';
 
@@ -19,15 +19,18 @@ export const LEVEL_POINTS: Record<Difficulty, number> = { easy: 100, medium: 200
 // "Par" solve times in seconds. Finishing at par scores 0.5 speed; faster
 // approaches 1, slower eases toward 0 without ever going negative.
 // Tune these once real play data exists (or replace with daily percentiles).
-export const PAR_SECONDS: Record<Variant, Record<Difficulty, number>> = {
+export const PAR_SECONDS: Record<GridVariant, Record<Difficulty, number>> = {
   classic: { easy: 360, medium: 720, hard: 1200 },
   hue: { easy: 420, medium: 840, hard: 1380 },
   jigsaw: { easy: 420, medium: 840, hard: 1380 },
 };
 
+export const puzzlePar = (variant: Variant, difficulty: Difficulty): number | undefined =>
+  variant === 'ring' ? undefined : PAR_SECONDS[variant][difficulty];
+
 export function components(r: PlayRecord): Record<Component, number> {
-  const par = PAR_SECONDS[r.variant][r.difficulty];
-  const speed = par / (par + Math.max(r.seconds, 1));
+  const par = puzzlePar(r.variant, r.difficulty);
+  const speed = par ? par / (par + Math.max(r.seconds, 1)) : 0;
   const accuracy = (r.accuracy ?? 0) / 100;
   const penalty = 0.1 * r.hints + 0.05 * r.checks + 0.2 * r.reveals + 0.15 * r.autofills;
   const independence = r.assisted ? Math.max(0, Math.min(0.8, 1 - penalty)) : 1;
@@ -36,7 +39,7 @@ export function components(r: PlayRecord): Record<Component, number> {
 
 /** Points for one daily, using the enabled components (all by default). */
 export function points(r: PlayRecord, enabled: Component[] = COMPONENTS): number {
-  if (!enabled.length) return 0;
+  if (!enabled.length || r.variant === 'ring') return 0;
   const c = components(r);
   const quality = enabled.reduce((sum, k) => sum + c[k], 0) / enabled.length;
   return Math.round(LEVEL_POINTS[r.difficulty] * quality);
@@ -61,7 +64,7 @@ export function boardRow(
   enabled: Component[] = COMPONENTS,
 ): BoardRow {
   const inPeriod = records.filter((r) => {
-    if (r.kind !== 'daily' || !r.daily) return false;
+    if (r.variant === 'ring' || r.kind !== 'daily' || !r.daily) return false;
     if (period === 'all') return r.daily <= today;
     return r.daily >= periodStart(period, today) && r.daily <= periodEnd(period, today);
   });

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Venndoku · overlap lab</title>
+<style>
+  :root{font:16px system-ui;color:#edf3ff;background:#0d1928;color-scheme:dark}
+  *{box-sizing:border-box}
+  body{max-width:1150px;margin:auto;padding:26px}
+  header{max-width:760px}
+  h1{font-size:clamp(30px,5vw,42px);margin:10px 0}
+  h2{font-size:22px;margin-top:0}
+  p,li{line-height:1.6;color:#c0cde0}
+  a{color:#9bf0c4}
+  button,select{font:inherit;background:#192b3e;border:1px solid #6a809c;border-radius:8px;color:inherit;padding:10px;cursor:pointer}
+  button:disabled{opacity:.4;cursor:default}
+  button.on{background:#31564b;border-color:#9bf0c4}
+  button:focus-visible,select:focus-visible{outline:2px solid #9bf0c4;outline-offset:3px}
+  .pickers,.tools,.keys{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+  .pickers{gap:14px}
+  .pickers label{display:flex;flex-direction:column;gap:6px}
+  .layout{display:grid;grid-template-columns:minmax(330px,555px) minmax(0,1fr);gap:28px;align-items:start}
+  .panel{padding:20px;background:#18283a;border:1px solid #4e657e;border-radius:14px}
+  svg{width:100%;display:block;background:#101f31;border-radius:14px}
+  svg text{pointer-events:none}
+  .node{cursor:pointer}
+  .node:focus-visible{outline:none;stroke:white;stroke-width:3}
+  .keys button{min-width:44px;min-height:44px}
+  .shelf{padding:12px 14px;background:#1f3548;border-radius:8px;margin-top:10px}
+  .shelf strong{color:#9bf0c4}
+  .matched-note{font-weight:750;color:#bfffd7;background:#234a3c;border-radius:4px;padding:1px 4px}
+  .evidence,.local,#groups{font-size:13px}
+  .local{color:#ffce8f}
+  #groups:empty{display:none}
+  #groups{padding:10px 0 0;color:#bfcfe3}
+  #status{min-height:24px;color:#baf2d2}
+  #conflict{padding:12px 15px;border:1px solid #ff9baa;border-radius:9px;background:#392633}
+  #conflict ul{margin:6px 0;padding-left:22px}
+  #conflict li{color:#ffe0e5}
+  details{margin:16px 0}
+  @media(max-width:780px){body{padding:16px}.layout{grid-template-columns:1fr;gap:16px}.pickers label:first-child{width:100%}.pickers select{max-width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <p class="local">Local exploration</p>
+  <h1>Venndoku overlap lab</h1>
+  <p>Try scattered circles shared by short, long and tilted ovals. Use each symbol once inside an oval. A circle counts in every oval that contains its center.</p>
+  <p><a href="circle-gallery.html">Earlier circle study</a> · <a href="../RINGDOKU-VENNDOKU.md">Sample evidence</a></p>
+</header>
+<div class="pickers">
+  <label>Direction <select id="model"></select></label>
+  <label>Sample <select id="sample"></select></label>
+  <label>Input order
+    <select id="input-order"><option value="cell">Cell first</option><option value="value">Value first</option></select>
+  </label>
+</div>
+<div class="layout">
+  <section aria-label="Puzzle">
+    <div class="tools">
+      <button id="inspect" aria-pressed="false">Inspect a circle</button>
+      <button id="notes" aria-pressed="false">Notes off</button>
+      <button id="erase">Erase</button>
+      <button id="reset">Reset</button>
+    </div>
+    <svg id="board" viewBox="0 0 420 420" role="group" aria-label="Overlapping oval puzzle"></svg>
+    <div id="groups"></div>
+    <div id="conflict" role="status" hidden></div>
+    <div class="shelf" id="shelf">Select a circle for larger notes.</div>
+    <div id="keys" class="keys" aria-label="Symbols"></div>
+    <p id="status" role="status"></p>
+    <details><summary>Exploration helpers</summary>
+      <p><button id="auto">Fill possible notes</button> <button id="answer">Reveal answer</button></p>
+    </details>
+  </section>
+  <aside class="panel">
+    <h2 id="title"></h2>
+    <p id="idea"></p>
+    <p id="rule"></p>
+    <p id="evidence" class="evidence"></p>
+    <p>Use <strong>Inspect a circle</strong> to trace all its ovals. Turn Inspector off to enter symbols or notes.</p>
+  </aside>
+</div>
+<script type="module">
+import { prepare, candidates, humanSolve } from './circle-models.mjs';
+import { findConflicts, describeConflict } from '../../src/testing/conflicts.mjs';
+
+const $ = id => document.getElementById(id);
+const load = async path => (await fetch(path)).json();
+const [overlaps, woven] = await Promise.all([load('venn-overlaps.json'), load('venn-frontier.json')]);
+const models = [...overlaps.models, ...woven.models];
+const samples = [...overlaps.samples, ...woven.samples];
+const colors = ['#8bd3ff', '#9bf0c4', '#bca5ff', '#ffc590', '#ffb0ca', '#e8e891'];
+let model, sample, values, notes, audit;
+let selected = null, active = null, inspect = false, pencil = false, inputOrder = 'cell';
+
+function svgElement(tag, attrs) {
+  const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+  $('board').append(node);
+  return node;
+}
+
+const irregular = document.createElement('optgroup');
+irregular.label = 'Irregular overlaps';
+const baseline = document.createElement('optgroup');
+baseline.label = 'Earlier woven studies';
+for (const item of models) {
+  const group = overlaps.models.includes(item) ? irregular : baseline;
+  group.append(new Option(item.title, item.id));
+}
+$('model').append(irregular, baseline);
+const requested = new URLSearchParams(location.search).get('model');
+if (models.some(item => item.id === requested)) $('model').value = requested;
+
+function chooseModel() {
+  model = prepare(models.find(item => item.id === $('model').value));
+  $('sample').replaceChildren();
+  for (const item of samples.filter(s => s.model === model.id)) {
+    $('sample').add(new Option(item.profile, item.id));
+  }
+  chooseSample();
+}
+
+function chooseSample() {
+  sample = samples.find(item => item.id === $('sample').value);
+  values = [...sample.givens];
+  notes = values.map(() => []);
+  audit = humanSolve(model, values);
+  selected = null;
+  active = null;
+  inspect = false;
+  render();
+}
+
+function put(value) {
+  if (inspect || selected === null || sample.givens[selected]) return;
+  if (pencil && value) {
+    if (values[selected]) return;
+    const current = notes[selected];
+    notes[selected] = current.includes(value)
+      ? current.filter(v => v !== value)
+      : [...current, value].sort((a, b) => a - b);
+  } else {
+    values[selected] = value;
+    notes[selected] = [];
+  }
+}
+
+function visitCircle(index) {
+  selected = index;
+  if (!inspect) {
+    if (inputOrder === 'value' && active !== null) put(active);
+    if (inputOrder === 'cell') active = values[index] || null;
+  }
+  render();
+}
+
+function chooseSymbol(value) {
+  if (inspect) return;
+  active = active === value ? null : value;
+  if (inputOrder === 'cell') put(value);
+  render();
+}
+
+function outlineTag(shape, tags) {
+  const rotation = (shape.angle || 0) * Math.PI / 180;
+  let best, bestScore = -Infinity;
+  for (let i = 0; i < 24; i++) {
+    const t = i * Math.PI / 12;
+    const x = shape.rx * Math.cos(t), y = shape.ry * Math.sin(t);
+    const point = {
+      x: shape.x + x * Math.cos(rotation) - y * Math.sin(rotation),
+      y: shape.y + x * Math.sin(rotation) + y * Math.cos(rotation),
+    };
+    if (point.x < 11 || point.x > 409 || point.y < 11 || point.y > 409) continue;
+    const gap = Math.min(...model.cells.map(cell => Math.hypot(point.x - cell.x, point.y - cell.y)));
+    const tagGap = Math.min(42, ...tags.map(tag => Math.hypot(point.x - tag.x, point.y - tag.y)));
+    const score = Math.min(gap, 37) + tagGap * .8;
+    if (score > bestScore) { best = point; bestScore = score; }
+  }
+  return best;
+}
+
+function drawOutlines(groups) {
+  const tags = [];
+  model.geometry.shapes.forEach((shape, i) => {
+    const on = groups.includes(i);
+    const color = colors[shape.family % colors.length];
+    svgElement('ellipse', {
+      cx: shape.x, cy: shape.y, rx: shape.rx, ry: shape.ry,
+      transform: `rotate(${shape.angle || 0} ${shape.x} ${shape.y})`,
+      fill: on ? color : 'none', 'fill-opacity': .045,
+      stroke: color, 'stroke-width': on ? 3 : 1.4,
+      'stroke-opacity': on ? 1 : inspect ? .22 : .57,
+      'pointer-events': 'none', 'aria-hidden': true,
+    });
+    if (shape.angle === undefined) return;
+    const point = outlineTag(shape, tags);
+    if (point) tags.push({ ...point, color, label: shape.label.at(-1), on });
+  });
+  for (const { x, y, color, label, on } of tags) {
+    svgElement('circle', { cx: x, cy: y, r: 8.5, fill: '#101f31', stroke: color,
+      'stroke-opacity': on ? 1 : .7, 'pointer-events': 'none', 'aria-hidden': true });
+    svgElement('text', { x, y: y + 3.4, 'text-anchor': 'middle', 'font-size': 10,
+      'font-weight': 700, fill: color, 'aria-hidden': true }).textContent = label;
+  }
+}
+
+function drawCircle(point, index, related, duplicates) {
+  const radius = model.nodeRadius;
+  const value = values[index];
+  const picked = index === selected;
+  const matched = !inspect && active !== null && (active === value || notes[index].includes(active));
+  const conflict = duplicates.has(index);
+  let label = `Circle ${index + 1}, ${value ? model.symbols[value - 1] : 'empty'}`;
+  if (sample.givens[index]) label += ', given';
+  if (notes[index].length) label += ', notes ' + notes[index].map(n => model.symbols[n - 1]).join(', ');
+  if (matched) label += ', symbol match';
+  if (conflict) label += ', conflict';
+  const node = svgElement('circle', {
+    class: 'node', cx: point.x, cy: point.y, r: radius,
+    fill: conflict ? '#502936' : picked || matched ? '#31564b' : related.has(index) ? '#243e4b' : '#15263a',
+    stroke: conflict ? '#ff9baa' : picked || matched ? '#9bf0c4' : '#7188a3',
+    'stroke-width': conflict ? 3 : picked || matched ? 2 : 1,
+    role: 'button', tabindex: 0, 'aria-label': label, 'aria-pressed': picked,
+  });
+  node.onclick = () => visitCircle(index);
+  node.onkeydown = e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      visitCircle(index);
+      $('board').querySelectorAll('.node')[index]?.focus();
+    }
+  };
+  if (value) {
+    svgElement('text', {
+      x: point.x, y: point.y + radius * .34, 'text-anchor': 'middle',
+      'font-size': radius * 1.05, 'font-weight': matched || conflict ? 750 : 500,
+      fill: conflict ? '#ffd5dc' : matched ? '#d0ffe0' : sample.givens[index] ? '#d8e2f0' : '#9bf0c4',
+      'text-decoration': conflict ? 'underline' : 'none', 'aria-hidden': true,
+    }).textContent = model.symbols[value - 1];
+    return;
+  }
+  if (!notes[index].length) {
+    svgElement('circle', { cx: point.x, cy: point.y, r: 1.7, fill: '#8097ae', 'pointer-events': 'none', 'aria-hidden': true });
+    return;
+  }
+  const columns = model.size <= 6 ? 3 : 4;
+  const rows = Math.ceil(model.size / columns);
+  const step = radius * (columns === 3 ? .51 : .4);
+  for (const note of notes[index]) {
+    const column = (note - 1) % columns, row = Math.floor((note - 1) / columns);
+    const hot = !inspect && active === note;
+    svgElement('text', {
+      x: point.x + (column - (columns - 1) / 2) * step,
+      y: point.y + (row - (rows - 1) / 2) * step + radius * .15,
+      'text-anchor': 'middle', 'font-size': radius * .48, 'font-weight': hot ? 850 : 500,
+      fill: hot ? '#bfffd7' : '#d4deed', 'text-decoration': hot ? 'underline' : 'none',
+      'aria-hidden': true,
+    }).textContent = model.symbols[note - 1];
+  }
+}
+
+function render() {
+  $('title').textContent = model.title;
+  $('idea').textContent = model.idea;
+  $('rule').textContent = model.rule;
+  $('inspect').textContent = inspect ? 'Exit inspector' : 'Inspect a circle';
+  $('inspect').setAttribute('aria-pressed', inspect);
+  $('inspect').className = inspect ? 'on' : '';
+  $('notes').textContent = pencil ? 'Notes on' : 'Notes off';
+  $('notes').setAttribute('aria-pressed', pencil);
+  $('notes').className = pencil ? 'on' : '';
+  for (const control of ['notes', 'erase', 'auto', 'answer']) $(control).disabled = inspect;
+  $('erase').disabled = inspect || selected === null || !!sample.givens[selected];
+
+  const shared = model.membership.filter(groups => groups.length > 1).length;
+  const intersections = audit.counts.intersection;
+  const strategy = intersections
+    ? ` The solve audit uses ${intersections} elimination steps across overlapping ovals.`
+    : audit.solved ? ' The solve audit completes this sample with single placements and candidate checks.' : '';
+  $('evidence').textContent = `${model.cells.length} circles · ${model.groups.length} ovals · ${shared} shared circles · ${sample.givens.filter(Boolean).length} clues. One solution checked by two counters.${strategy}`;
+
+  const groups = inspect && selected !== null ? model.membership[selected] : [];
+  const related = new Set(groups.flatMap(i => model.groups[i].cells));
+  $('groups').textContent = groups.map(i => model.groups[i].name).join(' · ');
+  const conflicts = findConflicts(model.groups, values);
+  const duplicates = new Set(conflicts.flatMap(c => c.cells));
+  $('board').replaceChildren();
+  drawOutlines(groups);
+  for (const sum of model.sums || []) {
+    const [a, b] = sum.cells.map(i => model.cells[i]);
+    svgElement('path', { d: `M${a.x} ${a.y}L${b.x} ${b.y}`, stroke: '#ffce8f', 'stroke-width': 2, 'stroke-dasharray': '3 3' });
+    svgElement('text', { x: (a.x + b.x) / 2 + 8, y: (a.y + b.y) / 2, fill: '#ffce8f', 'font-size': 12 }).textContent = 'Σ' + sum.total;
+  }
+  model.cells.forEach((point, i) => drawCircle(point, i, related, duplicates));
+
+  const conflictBox = $('conflict');
+  conflictBox.hidden = conflicts.length === 0;
+  conflictBox.replaceChildren();
+  if (conflicts.length) {
+    const title = document.createElement('strong');
+    title.textContent = 'Symbol conflict';
+    const list = document.createElement('ul');
+    for (const conflict of conflicts) {
+      const item = document.createElement('li');
+      item.textContent = describeConflict({ ...conflict, value: model.symbols[conflict.value - 1] }, i => 'circle ' + (i + 1));
+      list.append(item);
+    }
+    conflictBox.append(title, list);
+  }
+
+  const shelf = $('shelf');
+  shelf.replaceChildren();
+  if (selected === null) {
+    shelf.textContent = 'Select a circle for larger notes.';
+  } else {
+    const title = document.createElement('strong');
+    title.textContent = `Circle ${selected + 1}${inspect ? ' · inspecting' : ''} `;
+    shelf.append(title);
+    if (values[selected]) {
+      shelf.append(model.symbols[values[selected] - 1]);
+    } else {
+      shelf.append('Notes: ');
+      if (!notes[selected].length) shelf.append('none');
+      for (const note of notes[selected]) {
+        const token = document.createElement('span');
+        token.textContent = model.symbols[note - 1];
+        if (!inspect && active === note) token.className = 'matched-note';
+        shelf.append(token, ' ');
+      }
+    }
+  }
+
+  $('keys').replaceChildren();
+  model.symbols.forEach((symbol, i) => {
+    const button = document.createElement('button');
+    button.textContent = symbol;
+    button.disabled = inspect;
+    button.className = active === i + 1 && !inspect ? 'on' : '';
+    button.setAttribute('aria-pressed', active === i + 1 && !inspect);
+    button.onclick = () => chooseSymbol(i + 1);
+    $('keys').append(button);
+  });
+
+  const sumsComplete = (model.sums || []).every(s => s.cells.reduce((n, i) => n + values[i], 0) === s.total);
+  let status = inputOrder === 'cell' ? 'Tap a circle, then choose a symbol.' : 'Choose a symbol, then tap a circle.';
+  if (inputOrder === 'value' && active !== null) status = `${model.symbols[active - 1]} is armed. Tap its key again to clear it.`;
+  if (values.every(Boolean) && !conflicts.length && sumsComplete) status = 'All groups complete.';
+  if (inspect) status = 'Tap a circle to see all its ovals.';
+  $('status').textContent = status;
+}
+
+$('input-order').onchange = e => {
+  inputOrder = e.target.value;
+  active = null;
+  selected = null;
+  render();
+};
+$('model').onchange = chooseModel;
+$('sample').onchange = chooseSample;
+$('inspect').onclick = () => { inspect = !inspect; selected = null; render(); };
+$('notes').onclick = () => { pencil = !pencil; render(); };
+$('erase').onclick = () => { put(0); render(); };
+$('reset').onclick = chooseSample;
+$('auto').onclick = () => { notes = values.map((v, i) => v ? [] : candidates(model, values, i)); render(); };
+$('answer').onclick = () => { values = [...sample.solution]; notes = values.map(() => []); render(); };
+chooseModel();
+</script>
+</body>
+</html>

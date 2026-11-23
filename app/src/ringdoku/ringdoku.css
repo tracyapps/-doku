@@ -1,0 +1,285 @@
+.doku {
+  --ring-surface: color-mix(in srgb, var(--bg), var(--surface-soft) 32%);
+  --ring-alt-surface: color-mix(in srgb, var(--ring-surface), var(--region-line) 9%);
+  --ring-given-ink: color-mix(in srgb, var(--text), var(--ring-surface) 18%);
+  --ring-entry-ink: color-mix(in srgb, var(--accent), var(--text) 35%);
+  --ring-sheen: transparent;
+  --ring-main-line: #c7b7ff;
+  --ring-shift-line: #f3cb83;
+  --ring-spoke-line: #80def5;
+  --ring-region-outline: #9de7af;
+  --ring-outline-width: 2.5px;
+  --ring-outline-halo: #211837;
+}
+.doku:is([data-theme="paper"], [data-theme="comic"], [data-theme="rounded"], [data-theme="doodle"]) {
+  --ring-main-line: #5d359f;
+  --ring-shift-line: #865100;
+  --ring-spoke-line: #00627c;
+  --ring-region-outline: #176542;
+  --ring-outline-halo: #fffdf5;
+}
+.doku[data-theme="retro"] {
+  --ring-entry-ink: color-mix(in srgb, var(--accent), var(--text) 55%);
+}
+.doku[data-theme="contrast"] {
+  --ring-main-line: #eee1ff;
+  --ring-shift-line: #ffe09e;
+  --ring-spoke-line: #9beaef;
+  --ring-region-outline: #abffa8;
+  --ring-outline-width: 3px;
+}
+.doku:is([data-theme="comic"], [data-theme="comic-dark"]) {
+  --ring-outline-width: 3px;
+}
+.doku[data-theme="doodle"] .ring-rim {
+  stroke-dasharray: 90 1 30 0.5;
+}
+.doku[data-theme="blackboard"] .ring-rim {
+  stroke-dasharray: 36 1 56 0.6;
+}
+.doku[data-theme="glass"] {
+  --ring-sheen: #66c9ed33;
+}
+.doku[data-theme="rounded"] {
+  --ring-sheen: #fff;
+  --ring-alt-surface: #dceafa;
+}
+.doku[data-theme="rounded-dark"] {
+  --ring-sheen: #9dd3fa66;
+}
+.ring-board {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  touch-action: manipulation;
+}
+.ring-cell {
+  --ring-cell-fill: var(--ring-surface);
+  --ring-cell-ink: var(--ring-entry-ink);
+}
+.ring-cell[data-tone="1"] {
+  --ring-cell-fill: var(--ring-alt-surface);
+}
+.ring-cell[data-given] {
+  --ring-cell-ink: var(--ring-given-ink);
+}
+.ring-cell[data-selected] {
+  --ring-cell-fill: var(--accent-soft);
+  --ring-cell-ink: var(--accent-soft-ink);
+}
+.ring-cell[data-matching] {
+  --ring-cell-fill: var(--accent);
+  --ring-cell-ink: var(--accent-ink);
+}
+.ring-cell[data-error] {
+  --ring-cell-fill: color-mix(in srgb, var(--ring-surface), var(--error) 9%);
+  --ring-cell-ink: var(--error);
+}
+.ring-cell-face {
+  fill: var(--ring-cell-fill);
+  stroke: color-mix(in srgb, var(--grid-line), var(--region-line) 30%);
+  stroke-width: 0.8;
+  outline: none;
+  cursor: pointer;
+}
+.ring-cell[data-selected] .ring-cell-face,
+.ring-cell-face:focus-visible {
+  stroke: var(--ring-cell-ink);
+  stroke-width: 2.5;
+  stroke-dasharray: 3 1.5;
+}
+.ring-cell[data-error] .ring-cell-face {
+  stroke: var(--error);
+  stroke-width: 2.4;
+}
+.ring-cell[data-celebrating] .ring-cell-face {
+  animation: ring-celebrate 650ms ease-out;
+}
+@keyframes ring-celebrate {
+  40% { stroke: var(--accent); stroke-width: 4; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ring-cell[data-celebrating] .ring-cell-face { animation: none; }
+}
+.ring-cell-sheen,
+.ring-lines,
+.ring-value,
+.ring-note {
+  pointer-events: none;
+}
+.ring-cell:is([data-selected], [data-matching], [data-error]) .ring-cell-sheen {
+  display: none;
+}
+.ring-value,
+.ring-note {
+  fill: var(--ring-cell-ink);
+  font-family: var(--value-font, var(--theme-value-font));
+  font-variant-numeric: tabular-nums;
+  text-anchor: middle;
+  dominant-baseline: central;
+  paint-order: stroke;
+  stroke: var(--ring-cell-fill);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.ring-value {
+  font-weight: var(--value-weight);
+  scale: var(--value-scale, 1);
+}
+.ring-cell[data-given] .ring-value { font-weight: 500; }
+.ring-cell[data-matching] .ring-value { font-weight: 800; }
+.ring-cell[data-error] .ring-value {
+  font-weight: 800;
+  text-decoration: underline;
+}
+.ring-note {
+  fill: var(--ring-given-ink);
+  scale: var(--note-scale, 1);
+}
+.ring-cell[data-selected] .ring-note { fill: var(--ring-cell-ink); }
+.ring-note-match {
+  fill: var(--ring-entry-ink);
+  font-weight: 900;
+  text-decoration: underline;
+}
+.ring-lines path,
+.ring-lines circle {
+  fill: none;
+  stroke-linejoin: round;
+}
+.ring-region-line {
+  stroke: var(--region-line);
+  stroke-width: 1.4;
+}
+.ring-rim {
+  stroke: var(--region-line);
+  stroke-width: var(--ring-outline-width);
+}
+.ring-seam {
+  stroke: var(--ring-main-line);
+  stroke-width: 2.6;
+}
+.ring-bridge-seam {
+  stroke: var(--ring-shift-line);
+  stroke-width: 2.4;
+  stroke-dasharray: 5 4;
+}
+.ring-symbols {
+  fill: var(--muted);
+  font-size: 15px;
+  font-weight: 700;
+}
+.ring-mark-ring { --ring-mark: var(--ring-main-line); }
+.ring-mark-spoke { --ring-mark: var(--ring-spoke-line); }
+.ring-mark-region { --ring-mark: var(--ring-region-outline); }
+.ring-mark-bridge { --ring-mark: var(--ring-shift-line); }
+.ring-outline {
+  stroke: var(--ring-mark);
+  stroke-width: var(--ring-outline-width);
+  stroke-linecap: round;
+}
+.ring-outline .ring-outline-halo {
+  stroke: var(--ring-outline-halo);
+  stroke-width: calc(var(--ring-outline-width) + 1.5px);
+}
+.ring-outline.ring-mark-spoke { stroke-dasharray: 8 3; }
+.ring-outline.ring-mark-region { stroke-dasharray: 1 3.8; }
+.ring-outline.ring-mark-bridge { stroke-dasharray: 6 3 1 3; }
+.ring-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px 11px;
+  margin: 2px 0 9px;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+}
+.ring-legend li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ring-legend i {
+  width: 14px;
+  border-top: 2px solid var(--ring-mark);
+}
+.ring-legend :is(.ring-mark-spoke, .ring-mark-bridge) i { border-top-style: dashed; }
+.ring-legend .ring-mark-region i { border-top-style: dotted; }
+
+.game-page[data-variant="ring"] .play-layout { align-items: center; }
+.doku .game-page[data-variant="ring"] .keypad {
+  grid-template-columns: repeat(var(--ring-key-count), minmax(0, 1fr));
+  grid-template-rows: minmax(44px, auto);
+  min-height: 44px;
+  flex: none;
+}
+.ring-tools {
+  display: flex;
+  gap: 4px;
+  margin-block: 0 7px;
+}
+.ring-tools button {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 42px;
+  padding: 5px;
+  border: 1px solid var(--grid-line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--surface-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ring-tools button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-soft-ink);
+}
+.ring-tools svg { width: 16px; height: 16px; }
+.ring-example { margin-block: 2rem; }
+.ring-example li { margin-block: 5px; }
+.ring-example .ring-board {
+  max-width: 440px;
+  margin-inline: auto;
+}
+.ring-example-members {
+  text-align: center;
+  font-size: 0.9rem;
+}
+.ring-feedback textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid var(--grid-line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--surface-ink);
+  font: inherit;
+}
+.ring-feedback-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55em;
+  margin-block: 14px;
+}
+.ring-feedback-consent input { accent-color: var(--accent); }
+.ring-feedback [role="status"] { margin-top: 12px; }
+
+@media (max-width: 700px) {
+  .doku:not(.in-preview) .game-page[data-variant="ring"] .play-layout {
+    --controls-min: 176px;
+  }
+  .doku:not(.in-preview)[data-discord="compact"] .game-page[data-variant="ring"] .play-layout {
+    --controls-min: 230px;
+  }
+  .doku:not(.in-preview) .board-wrap > .ring-board { width: var(--board); }
+  .doku:not(.in-preview) .game-page[data-variant="ring"] .keypad > button { height: 49px; }
+}

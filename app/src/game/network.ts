@@ -109,7 +109,7 @@ export const discordChallengeMessage = (
   variant: Variant,
   difficulty: Difficulty,
 ) =>
-  `🧩 **${titleCase(variant)} · ${titleCase(difficulty)}** \\*doku complete!\nThink you can solve the same puzzle?`;
+  `🧩 **${variant === "ring" ? "Ringdoku" : titleCase(variant)} · ${titleCase(difficulty)}** \\*doku complete!\nThink you can solve the same puzzle?`;
 let discordSdkPromise: Promise<
   import("@discord/embedded-app-sdk").DiscordSDK
 > | null = null;

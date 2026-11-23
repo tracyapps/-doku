@@ -1,0 +1,93 @@
+{
+  "date": "2026-11-10T21:51:57.757Z",
+  "purpose": "Testing-only preview; live player unchanged; no research files or credentials",
+  "files": [
+    {
+      "file": "api/index.ts",
+      "sha256": "bf4789328bf5fc9c2aafe822d0717cadb00c4ef0fded8c7702745a92204fae50"
+    },
+    {
+      "file": "package-lock.json",
+      "sha256": "760302bac197fc33c61808886ad7d6a6d834bb5a1fa49a322634aa319307bacb"
+    },
+    {
+      "file": "package.json",
+      "sha256": "a0b3c252fe9e97b5d0900d82ffbfcd64af515bffd5be10e7631f91f527205485"
+    },
+    {
+      "file": "public/assets/brand/doku-icon.png",
+      "sha256": "c44cb951df4ebf927a67f0789a4a953dedcacf7d860ae0634f22a5a1e1ac6fd2"
+    },
+    {
+      "file": "server/playtest-app.ts",
+      "sha256": "18872cb195b8c0110940b989e84bf8d1ddac95d4602819ef461a1518226bb92b"
+    },
+    {
+      "file": "server/playtest-store.ts",
+      "sha256": "4b54677b117bc98aaff64955566344217b18482436b39dc9f6a704decb5e8619"
+    },
+    {
+      "file": "server/playtesting.ts",
+      "sha256": "0efd9f9758a3d44759d36e093a0835277e6db36731602d9731945dd7c0288deb"
+    },
+    {
+      "file": "src/testing/RingBoard.tsx",
+      "sha256": "accbb8b1669d03c5c88cca70bd09db5ed5ba22f14d9953c18b716a2a9dee575f"
+    },
+    {
+      "file": "src/testing/TestingApp.tsx",
+      "sha256": "e2b34d054a008ae66e0ed83bc0cb70df5bd9dc2543c2ff1d0d275fbc38da6214"
+    },
+    {
+      "file": "src/testing/catalog.json",
+      "sha256": "4a0ea332d4ac6489e47dac3de79fdedc538eed96bf33e1646557764ce2337f50"
+    },
+    {
+      "file": "src/testing/conflicts.d.mts",
+      "sha256": "875c45fe09a25a9cb5af97a178b88eb714922161246b88b0a0a2dd3787057d5d"
+    },
+    {
+      "file": "src/testing/conflicts.mjs",
+      "sha256": "f3ab173c75d43d60b1687a331104f583fa1435fb7682fd9aeee3d0768629047b"
+    },
+    {
+      "file": "src/testing/main.tsx",
+      "sha256": "644bc4c6a1def56f694b1f11196c6c8e8df2379f0d28305403767301ccc82f3f"
+    },
+    {
+      "file": "src/testing/recorder.ts",
+      "sha256": "851daab42022ec98d44dc86c8d578c724f9dcf9c70331a540f6188b8fed307c6"
+    },
+    {
+      "file": "src/testing/rules.ts",
+      "sha256": "5efbe03741a27e25de7a07acbdb83dfa45e3d1d7722e1145fca4d3d15bbf4623"
+    },
+    {
+      "file": "src/testing/testing.css",
+      "sha256": "80b950ab112c6dac1d83845df27dd6b362f5df814b922f81e00e618b1cd36b44"
+    },
+    {
+      "file": "testing.html",
+      "sha256": "baf72198426e2b9214825cc3e8d89aed7a519cabc4e3f17a4b050f46542c43fb"
+    },
+    {
+      "file": "tsconfig.json",
+      "sha256": "83efc1798334967d5a907f26b8cba31fa213f16b5ac0ed5c02fd38e7cf0ceb66"
+    },
+    {
+      "file": "vercel.json",
+      "sha256": "686afea51a7bd1f177d9802e7168bd59c77d01468aa4c7147a552ebf40f3b83c"
+    },
+    {
+      "file": "vite.testing.config.ts",
+      "sha256": "43a8f47e166460f6d62a8fdc97a689628f86ea49a372562dc53d638939bf661c"
+    }
+  ],
+  "deploymentId": "dpl_3hVzp5bCDoTKc3h75qd5U9ZUo5Fs",
+  "publicUrl": "https://doku-playtesting-tracyapps-projects.vercel.app/testing/",
+  "environment": "preview",
+  "sourceBase": "03ce2e98109b4b9c95590022acf16136802b23c2",
+  "sourceBranch": "codex/reset-and-mobile-exploration",
+  "uncommittedSnapshot": true,
+  "audioPolicy": "public with separate explicit tester consent; older private recordings retain their stored audience"
+}

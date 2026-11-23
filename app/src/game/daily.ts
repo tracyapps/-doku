@@ -1,12 +1,12 @@
 // Today's puzzles: three separate puzzles per day (easy, medium, hard),
 // seeded by the date + level so everyone gets the same set for a date.
-import { createPuzzle, type Difficulty, type Puzzle, type Variant } from './engine.js';
+import { createPuzzle, type Difficulty, type Puzzle, type GridVariant } from './engine.js';
 
 export const DAILY_LEVELS: Difficulty[] = ['easy', 'medium', 'hard'];
 
 // Which variant each weekday's set uses (0 = Sunday … 6 = Saturday).
 // Edit freely; add new variants here as they ship.
-export const DAILY_ROTATION: Variant[] = [
+export const DAILY_ROTATION: GridVariant[] = [
   'classic', // Sun
   'classic', // Mon
   'hue',     // Tue
@@ -35,7 +35,7 @@ export function addDays(key: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export const dailyVariant = (key: string): Variant => DAILY_ROTATION[parseKey(key).getUTCDay()];
+export const dailyVariant = (key: string): GridVariant => DAILY_ROTATION[parseKey(key).getUTCDay()];
 export const dailySeed = (key: string, level: Difficulty) => `daily:${key}:${level}`;
 export const dailyPuzzle = (key: string, level: Difficulty): Puzzle =>
   createPuzzle(dailySeed(key, level), dailyVariant(key), level);

@@ -2,6 +2,8 @@
 // Each reads the game's theme tokens (--bg, --surface, --accent, …) so it
 // follows whatever skin the player picked. Which ones show is a setting.
 import { useState } from "react";
+import { puzzleRing } from "../game/puzzle-rules.js";
+import { circleBox, ringGeometry } from "../ringdoku/geometry";
 import type { Session } from "../game/session.js";
 import {
   CELL_LABELS, LEVELS, achievements, clamp, fmtTime, gridRows, radarAxes, rowWinners,
@@ -77,15 +79,21 @@ function Card({ title, children, id }: { title: string; children: React.ReactNod
 /* ---------- 01 Run ---------- */
 export function RunView({ session, you }: { session: Session; you: Player }) {
   const cells = runCells(session);
+  const ring = puzzleRing(session.puzzle);
+  const geometry = ring && ringGeometry(ring);
   return (
     <Card title="Run — your board, as the chart" id="run">
       <div className="rv-head"><span className="rv-who">{you.name}</span><Context p={you} /></div>
       <div className="rv-run-grid">
-        <div className={`rv-fp${session.puzzle.variant === "jigsaw" ? " jigsaw" : ""}`} aria-hidden="true">
-          {cells.map((c, i) => (
-            <i key={i} className={`${c.kind}${c.right ? " r" : ""}${c.bottom ? " b" : ""}`} />
-          ))}
-        </div>
+        {geometry ? (
+          <svg className="rv-ring-fingerprint" viewBox={circleBox} aria-hidden="true">
+            {cells.map(({kind}, i) => <path key={i} className={kind} d={geometry.cell(i)} />)}
+          </svg>
+        ) : (
+          <div className={`rv-fp${session.puzzle.variant === "jigsaw" ? " jigsaw" : ""}`} aria-hidden="true">
+            {cells.map((c, i) => <i key={i} className={`${c.kind}${c.right ? " r" : ""}${c.bottom ? " b" : ""}`} />)}
+          </div>
+        )}
         <div className="rv-run-stats">
           <Ring pct={you.accuracy} />
           <div className="rv-col">
@@ -93,7 +101,7 @@ export function RunView({ session, you }: { session: Session; you: Player }) {
               <span className="k">Active time</span>
               <span className="v">{fmtTime(you.seconds)}</span>
               <span className="sub">
-                {you.evaluated} squares evaluated
+                {you.evaluated} cells evaluated
                 {you.reveals ? ` · ${you.reveals} revealed` : ""}
                 {you.autofills ? ` · ${you.autofills} note autofills` : ""}
               </span>
@@ -241,6 +249,7 @@ export function TracksView({ group }: { group: Player[] }) {
 export function TapeView({ you }: { you: Player }) {
   const [copied, setCopied] = useState("");
   const text = shareText(you);
+  const timeBar = timeSegments(you);
   const seg = (filled: number, cls: "f" | "r" = "f") =>
     Array.from({ length: 10 }, (_, i) => <i key={i} className={i < filled ? cls : ""} />);
   const copy = async () => {
@@ -258,7 +267,7 @@ export function TapeView({ you }: { you: Player }) {
         <div className="rv-receipt">
           <div className="rtop"><span>*doku · {variantName[you.variant]}</span><span className="d">{you.difficulty} · {shortDate(you.completedAt)}</span></div>
           <div className="rline"><span className="lab">Time</span><span className="val">{fmtTime(you.seconds)}</span>
-            <span className="bar" role="img" aria-label={`Time: ${timeSegments(you)} of 10, full at par or faster`}>{seg(timeSegments(you))}</span></div>
+            {timeBar !== null && <span className="bar" role="img" aria-label={`Time: ${timeBar} of 10, full at par or faster`}>{seg(timeBar)}</span>}</div>
           <div className="rline"><span className="lab">Accuracy</span><span className="val">{you.accuracy == null ? "—" : `${you.accuracy}%`}</span>
             <span className="bar" role="img" aria-label={`Accuracy ${you.accuracy ?? 0} percent`}>{seg(Math.round((you.accuracy ?? 0) / 10))}</span></div>
           <div className="rline"><span className="lab">Hints</span><span className="val">{you.hints}</span>

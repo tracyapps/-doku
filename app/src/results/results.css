@@ -443,3 +443,11 @@
 @media (prefers-reduced-motion: reduce) {
   .rv-ring .fg, .rv-track .mk { transition: none; }
 }
+
+.rv-ring-fingerprint { width: 100%; max-width: 380px; }
+.rv-ring-fingerprint path { fill: var(--surface-soft); stroke: var(--region-line); stroke-width: 1.1; }
+.rv-ring-fingerprint .given { fill: color-mix(in srgb, var(--region-line) 42%, var(--bg)); }
+.rv-ring-fingerprint .correct { fill: var(--accent); }
+.rv-ring-fingerprint .wrong { fill: var(--error); }
+.rv-ring-fingerprint .hint { fill: color-mix(in srgb, var(--accent) 55%, var(--bg)); stroke-dasharray: 3 2; }
+.rv-ring-fingerprint .reveal { fill: color-mix(in srgb, var(--error) 55%, var(--bg)); stroke-dasharray: 3 2; }

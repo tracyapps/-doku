@@ -1,14 +1,16 @@
 import express from "express";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createStore } from "./store.js";
-import { createPuzzle } from "../src/game/engine.js";
+import { createPuzzle, VARIANTS } from "../src/game/engine.js";
+import { puzzleSymbols } from "../src/game/puzzle-rules.js";
+import { ringLayoutForSeed } from "../src/game/ringdoku.js";
 import { toNodeHandler } from "better-auth/node";
+import { playtestingRouter } from "./playtesting.js";
 const hash = (token: string) =>
   createHash("sha256").update(token).digest("hex");
 const fail = (message: string, status = 400): never => {
   throw Object.assign(new Error(message), { status });
 };
-const variants = ["classic", "hue", "jigsaw"];
 const difficulties = ["easy", "medium", "hard"];
 async function loadAccounts() {
   try {
@@ -63,6 +65,7 @@ export function makeApp(store = createStore()) {
     }
   });
   // Better Auth reads the raw body itself, so JSON parsing starts after it.
+  app.use("/api/playtesting", playtestingRouter());
   const smallJson = express.json({ limit: "256kb" }),
     syncJson = express.json({ limit: "4mb" }); // record sync can be large once
   app.use((req, res, next) =>
@@ -172,7 +175,8 @@ export function makeApp(store = createStore()) {
         typeof seed !== "string" ||
         !seed.length ||
         seed.length > 100 ||
-        !variants.includes(variant)
+        !VARIANTS.includes(variant) ||
+        (variant === "ring" && !ringLayoutForSeed(seed))
       )
         fail("Invalid puzzle seed or variant");
       const challenge = {
@@ -265,6 +269,7 @@ export function makeApp(store = createStore()) {
           attempt.difficulty,
         );
         const board = [...puzzle.givens];
+        const symbols = puzzleSymbols(puzzle);
         const first = new Map<number, boolean>();
         const revealed = new Set<number>();
         let hints = 0,
@@ -301,7 +306,7 @@ export function makeApp(store = createStore()) {
             !["set", "hint", "reveal"].includes(action.kind) ||
             !Number.isInteger(action.cell) ||
             action.cell < 0 ||
-            action.cell > 80 ||
+            action.cell >= board.length ||
             puzzle.givens[action.cell]
           )
             fail("Invalid cell action");
@@ -317,9 +322,7 @@ export function makeApp(store = createStore()) {
             continue;
           }
           if (
-            !Number.isInteger(action.value) ||
-            action.value < 0 ||
-            action.value > 9
+            action.value !== 0 && !symbols.includes(action.value)
           )
             fail("Invalid value");
           if (

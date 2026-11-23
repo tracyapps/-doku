@@ -8,3 +8,7 @@ test-results
 docs/qa
 *.log
 
+
+# Research prototypes contain unselected private experiments.
+docs
+tests

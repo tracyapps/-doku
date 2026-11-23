@@ -2,6 +2,8 @@
 
 Status: requirements captured from the September 11, 2026 conversation. This is a product brief, not an implemented game. Proposed defaults and sequencing below remain design decisions, not additional user requirements.
 
+October 8, 2026 update: the historical sequence below is superseded where it describes wrapped native apps or automatic guest uploads. See [the native plan](app/docs/NATIVE-APPS.md) for shared React Native UI/core and explicit owned migration, [the Git workflow](app/docs/GIT-WORKFLOW.md) for parallel production/native development, and [the game roadmap](app/docs/GAME-ROADMAP.md) for requested MiniDoku/IXdoku and later Mahjong/Braille concepts. Smaller Sudoku is now requested; on November 9 the owner selected 4×4 as the first size. Earlier unselected-provider/status statements are historical, not current implementation evidence.
+
 ## Product idea
 
 A beautiful, comfortable Sudoku family for solo play and friend challenges on separate boards of the same puzzle, with Discord Activities as the intended integration to explore. Unlimited play, no lives, and no punitive gameplay restrictions for mistakes. Challenge results recognize multiple kinds of accomplishment. Mobile readability and low-friction input are foundational.

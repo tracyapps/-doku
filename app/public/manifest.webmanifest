@@ -9,6 +9,9 @@
   "background_color": "#0d1928",
   "theme_color": "#0d1928",
   "icons": [
-    { "src": "/assets/brand/doku-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    { "src": "/assets/brand/doku-app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/brand/doku-app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/brand/doku-app-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/assets/brand/doku-app-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

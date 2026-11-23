@@ -1,0 +1,16 @@
+{
+  "host": "https://stardoku-4p48uc5a0-tracyapps-projects.vercel.app",
+  "checkedAt": "2026-11-10T21:11:53.187Z",
+  "receipt": "24c40215-c160-4c1e-bb2d-433357ffee32",
+  "checks": [
+    "Public audio policy with explicit consent required",
+    "No-login ticket",
+    "Signed proof and same-origin submission",
+    "PostgreSQL response and audio round trip",
+    "Idempotent retry",
+    "Private audio denied publicly",
+    "Owner audio verified byte for byte",
+    "Setup excluded from public opinions"
+  ],
+  "publicResponses": 0
+}

@@ -167,10 +167,16 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
 // ---- evaluation -------------------------------------------------------------
 
+// Ringdoku is a new rule set. Leave the existing achievement criteria scoped to grid games.
+export function achievementContext(ctx: Ctx): Ctx {
+  return { ...ctx, records: ctx.records.filter(record => record.variant !== 'ring') };
+}
+
 /** Every award the records have earned, oldest first. */
 export function evaluate(ctx: Ctx, defs: AchievementDef[] = ACHIEVEMENTS): Award[] {
+  const eligible = achievementContext(ctx);
   return defs
-    .flatMap((d) => d.awards(ctx))
+    .flatMap((d) => d.awards(eligible))
     .sort((a, b) => a.earnedAt.localeCompare(b.earnedAt));
 }
 

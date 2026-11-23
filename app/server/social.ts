@@ -18,7 +18,7 @@ import { randomBytes } from "node:crypto";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "./auth.js";
 import type { PlayRecord } from "../src/game/records.js";
-import type { Difficulty, Variant } from "../src/game/engine.js";
+import type { Difficulty, GridVariant } from "../src/game/engine.js";
 import { periodEnd, periodStart, type Period } from "../src/game/consistency.js";
 import { COMPONENTS, PAR_SECONDS, boardRow, rank, type BoardView, type Component } from "../src/game/scoring.js";
 import { consistency } from "../src/game/consistency.js";
@@ -354,7 +354,7 @@ const quantile = (sorted: number[], q: number) => {
   return Math.round(sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo));
 };
 export type ParLine = {
-  variant: Variant; difficulty: Difficulty; par: number;
+  variant: GridVariant; difficulty: Difficulty; par: number;
   plays: number; players: number; unassistedPlays: number;
   median: number | null; p25: number | null; p75: number | null;
   medianSpeedScore: number | null; // what a typical solve earns for speed (0–100); ~50 means par fits
@@ -363,7 +363,7 @@ export type ParLine = {
 };
 export function parReport(records: (PlayRecord & { userId?: string })[]) {
   const lines: ParLine[] = [];
-  for (const variant of Object.keys(PAR_SECONDS) as Variant[])
+  for (const variant of Object.keys(PAR_SECONDS) as GridVariant[])
     for (const difficulty of Object.keys(PAR_SECONDS[variant]) as Difficulty[]) {
       const par = PAR_SECONDS[variant][difficulty];
       const all = records.filter((r) => r.variant === variant && r.difficulty === difficulty);

@@ -49,5 +49,7 @@ Before launch, add the final Vercel origin and Discord Activity URL mappings in 
 - [Theme editing guide](app/docs/THEMES.md)
 - [Full style audit and verification evidence](app/docs/STYLE-AUDIT.md)
 - [Shared native architecture and store plan](app/docs/NATIVE-APPS.md)
+- [Production/native Git and integration workflow](app/docs/GIT-WORKFLOW.md)
+- [MiniDoku, IXdoku and later game roadmap](app/docs/GAME-ROADMAP.md)
 
 The October 8 direction is a shared React Native player UI for iOS/Android/macOS and React Native for Web for browser/Discord, with one TypeScript core/theme system and the existing account service. The plan makes full history/save/settings continuity, safe migration, platform integration and reproducible builds prerequisites; this architecture has not yet been implemented.
